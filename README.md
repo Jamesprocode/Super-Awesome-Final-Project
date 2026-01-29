@@ -21,13 +21,13 @@ Description of the plugin and motivation behind it. What makes this plugin uniqu
 ---
 
 ## 3. Technical Architecture 
-* **(JUCE Framework)**: 
+* **JUCE Framework**: 
 
 ---
 
 ## 4. UI/UX Design
 * **Visual Elements:** Layout description
-* **Visualizers:** Real-time FFT spectrum analyzer or waveform display?
+* **Visualizers:** Real-time spectrum analyzer or waveform display?
 
 ---
 
