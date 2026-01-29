@@ -7,7 +7,7 @@
 ## 1. Summary
 Description of the plugin and motivation behind it. What makes this plugin unique?
 
-## 2. Goals
+## 2. Plan
 ### 2.1 Goals
 * **Input/Output:** [Describe the signal flow]
 * etc...
