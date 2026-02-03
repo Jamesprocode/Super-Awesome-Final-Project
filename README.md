@@ -2,6 +2,14 @@
 
 **Author(s):** Angela Branchek, Rafael Collado, Binyue Deng, JD Harris, Jiayi Wang
 
+- motivation, problem to be solved, why is there a need for this
+- applications, use cases, target users, context, environment
+- functionality from user point of view and how it differentiates from similar products
+- plans for implementation: flow chart, processing blocks, needed components, potential need for 3rd party libs
+- algorithmic references - which reference do you base your algorithmic implementations on?
+- general responsibilities and work assignments (can overlap)
+- (Bonus) If you can create a timeline and make use of the Github Projects functionality
+
 - We want to take the guesswork out of long plugin chains for [INSERT HERE: vocals, guitar, etc??] and provide producers a sleek, straightforward plugin with only one or two knobs to effortlessly improve a track's sound. By orchestrating multiple effects in tandem with a single knob, we can help users get to a sound they love faster and easier.
 - This plugin is useful for anyone, from novice producers looking for a fool-proof way to level up their sound, to commerical audio engineers who want a quick and reliable way to get their work done without sacrificing quality.
 - Our plugin will do the heavy lifting in the background for the user, making sure the interface is as fool-proof as possible.
