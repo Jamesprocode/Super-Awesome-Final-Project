@@ -2,6 +2,14 @@
 
 **Author(s):** Angela Branchek, Rafael Collado, Binyue Deng, JD Harris, Jiayi Wang
 
+- We want to take the guesswork out of long plugin chains for [INSERT HERE: vocals, guitar, etc??] and provide producers, beginner to advanced, one sleek, straightforward plugin with only one or two knobs to effortlessly improve a track's sound. By orchestrating multiple effects in tandem with a single knob, we can help users get to a sound they love faster and easier.
+- This plugin is useful for anyone, from novice producers looking for a fool-proof way to level up their sound, to commerical audio engineers who want a fast, reliable way to get their work done without sacrificing quality.
+- Our plugin will do the heavy lifting in the background for the user, making sure the interface is as fool-proof as possible.
+- We will be developing this product as a VST plugin. We will have to research and iterate on the underlying chain and how our knob(s) affect the sound.
+- We are partially inspired by plugins like Fresh Air and the OneKnob series, who offer minimal user interfaces with impressive output quality.
+- general responsibilities and work assignments (can overlap) [INSERT HERE]
+- (Bonus) If you can create a timeline and make use of the Github Projects functionality [i don't care about this tbh]
+
 ---
 
 ## 1. Summary
