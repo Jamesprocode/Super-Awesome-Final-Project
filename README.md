@@ -51,7 +51,12 @@
 ### algorithmic references - which reference do you base your algorithmic implementations on?
   - JUCE AudioProcessorValueTreeState
 ### general responsibilities and work assignments (can overlap)
+  - Each group member work on one of the processing chain (eq, compressor, de-esser, reverb, delay, autotune?, something to choose from)
+  - decide how to break up the work for UI
 ### Timeline
+  - Feburary : Download JUCE and learn the documentation and talk about the data structure and the signal flow
+  - March: Each of the group member work on their own processing DSP components
+  - April assemble the DSP components and work on the UI design with the big knobs implementation
 
 ---
 
