@@ -2,6 +2,50 @@
 
 **Author(s):** Angela Branchek, Rafael Collado, Binyue Deng, JD Harris, Jiayi Wang
 
+## README
+## 1. Summary
+The production process of writing music in a DAW can be overwhelming and sometimes frustrating when you have so many options and settings that can be tweaked. Some producers have preferred plugin chains that they have assembled from years of experience, but even with that comes the need for slight adjustments depending on the nature of the audio source, which can waste time during a session. Other producers that are less experienced might struggle with figuring out where to start when several plugins with even more parameters to edit are given to them. If there was a way to reduce the headache of needing to dial in the perfect sound without limiting the user, both beginner and experienced music producers would benefit.
+
+Our final project involves creating a plugin with several pre-programmed effects that can be adjusted and ordered to create a chain on a vocal or instrument track. However, there are many other plugins that can already do this, so the feature that would make this plugin unique would allow users to interact with one or two knobs that would control parameters from multiple effects simultaneously. This would not only allow users to get a desirable sound in a much more straight-forward interface, but would keep the customization abilities of adjusting multiple effects parameters by allowing users to create their own macro knobs.
+
+We would create this plugin with JUCE, an audio plugin development framework that will make allow us to handle the DSP and interface design more easily. With JUCE, we plan to distribute this plugin in the VST3 and AU formats, with the potential to support AAX as well.
+
+## 2. Plan
+### 2.1 Goals
+* Process audio in real-time
+* Program several effects: EQ, compression, reverb, delay, chorus, distortion
+* Create several preset macro knobs
+* Allow users to make their own macro knobs
+
+### 2.2 Non-Goals
+* Supporting external plugins
+
+
+### 2.3 Success Metrics
+* Minimal latency (under 10ms)
+* Will have most commonly used effects implemented
+* Will be pleasant for users to work with
+* Users will not have a hard time or feel limited when dialing in a desired sound
+* Users will be able to find a desired sound more quickly
+
+---
+
+## 3. Technical Architecture 
+* **JUCE Framework**: 
+
+---
+
+## 4. UI/UX Design
+* **Visual Elements:** Layout description
+* **Visualizers:** Real-time spectrum analyzer or waveform display?
+
+---
+
+## 5. DSP Implementation Details
+Describe any DSP algorithms that will be used
+
+---
+
 ## Canvas assignment bullet points
 ### motivation, problem to be solved, why is there a need for this
   - Motivations
@@ -68,45 +112,3 @@
 - We are partially inspired by plugins like Fresh Air and the OneKnob series, who offer minimal user interfaces with impressive output quality.
 - general responsibilities and work assignments (can overlap) [INSERT HERE]
 - (Bonus) If you can create a timeline and make use of the Github Projects functionality [i don't care about this tbh]
-
----
-## PREVIOUS README (DELETE AFTER ABOVE IS COMPLETE?)
-## 1. Summary
-The production process of writing music in a DAW can be overwhelming and sometimes frustrating when you have so many options and settings that can be tweaked. Some producers have preferred plugin chains that they have assembled from years of experience, but even with that comes the need for slight adjustments depending on the nature of the audio source, which can waste time during a session. Other producers that are less experienced might struggle with figuring out where to start when several plugins with even more parameters to edit are given to them. If there was a way to reduce the headache of needing to dial in the perfect sound without limiting the user, both beginner and experienced music producers would benefit.
-
-Our final project involves creating a plugin with several pre-programmed effects that can be adjusted and ordered to create a chain on a vocal or instrument track. However, there are many other plugins that can already do this, so the feature that would make this plugin unique would allow users to interact with one or two knobs that would control parameters from multiple effects simultaneously. This would not only allow users to get a desirable sound in a much more straight-forward interface, but would keep the customization abilities of adjusting multiple effects parameters by allowing users to create their own macro knobs.
-
-We would create this plugin with JUCE, an audio plugin development framework that will make allow us to handle the DSP and interface design more easily. With JUCE, we plan to distribute this plugin in the VST3 and AU formats, with the potential to support AAX as well.
-
-## 2. Plan
-### 2.1 Goals
-* Process audio in real-time
-* Program several effects: EQ, compression, reverb, delay, chorus, distortion
-* Create several preset macro knobs
-* Allow users to make their own macro knobs
-
-### 2.2 Non-Goals
-* Supporting external plugins
-
-### 2.3 Success Metrics
-* Minimal latency (under 10ms)
-* Will have most commonly used effects implemented
-* Will be pleasant for users to work with
-* Users will not have a hard time or feel limited when dialing in a desired sound
-* Users will be able to find a desired sound more quickly
-
----
-
-## 3. Technical Architecture 
-* **JUCE Framework**: 
-
----
-
-## 4. UI/UX Design
-* **Visual Elements:** Layout description
-* **Visualizers:** Real-time spectrum analyzer or waveform display?
-
----
-
-## 5. DSP Implementation Details
-Describe any DSP algorithms that will be used
