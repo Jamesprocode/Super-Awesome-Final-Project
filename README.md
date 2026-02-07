@@ -43,11 +43,6 @@ We would create this plugin with JUCE, an audio plugin development framework tha
 
 ---
 
-## 5. DSP Implementation Details
-Describe any DSP algorithms that will be used
-
----
-
 ### motivation, problem to be solved, why is there a need for this
   - Motivations
     - Existing production workflows require repeatedly assembling and managing multi-plugin processing chains, leading to unnecessary setup time. There is a need for a unified, modular environment that preserves professional control and transparency while significantly reducing interaction overhead and enabling faster iteration through a single interface.
