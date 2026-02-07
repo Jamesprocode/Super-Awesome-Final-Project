@@ -36,7 +36,9 @@ We would create this plugin with JUCE, an audio plugin development framework tha
 ---
 
 ## 4. UI/UX Design
-* **Visual Elements:** Layout description
+* **Visual Elements:**
+* Main UI: Simple layout with a couple of knobs to control the overall sound
+* More detailed layout with individual plugin controls displayed
 * **Visualizers:** Real-time spectrum analyzer or waveform display?
 
 ---
@@ -46,7 +48,6 @@ Describe any DSP algorithms that will be used
 
 ---
 
-## Canvas assignment bullet points
 ### motivation, problem to be solved, why is there a need for this
   - Motivations
     - Existing production workflows require repeatedly assembling and managing multi-plugin processing chains, leading to unnecessary setup time. There is a need for a unified, modular environment that preserves professional control and transparency while significantly reducing interaction overhead and enabling faster iteration through a single interface.
@@ -98,6 +99,10 @@ Describe any DSP algorithms that will be used
   - Each group member work on one of the processing chain (eq, compressor, de-esser, reverb, delay, autotune?, something to choose from)
   - decide how to break up the work for UI
 ### Timeline
-  - Feburary : Download JUCE and learn the documentation and talk about the data structure and the signal flow
-  - March: Each of the group member work on their own processing DSP components
-  - April assemble the DSP components and work on the UI design with the big knobs implementation
+  - Feburary : Download JUCE, learn the documentation, and talk about the data structure and the signal flow
+      - Choose which effect each group member will work on
+      - Begin implementing the DSP algorithms for each effect
+  - March: Finish implementing the individual effect algorithms
+    - Combine the individual effects into a unified plugin
+  - April: Finish assembling the DSP components
+    - Work on the UI design with the big knobs implementation
