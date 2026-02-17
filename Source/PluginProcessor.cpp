@@ -19,26 +19,27 @@ TestReverbAudioProcessor::TestReverbAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+        apvts(*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
-    addParameter(roomSizeParam = new juce::AudioParameterFloat(
-    "roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
-
-    addParameter(dampingParam = new juce::AudioParameterFloat(
-        "damping", "Damping", 0.0f, 1.0f, 0.5f));
-
-    addParameter(widthParam = new juce::AudioParameterFloat(
-        "width", "Width", 0.0f, 1.0f, 1.0f));
-
-    addParameter(wetParam = new juce::AudioParameterFloat(
-        "wet", "Wet Level", 0.0f, 1.0f, 0.33f));
-
-    addParameter(dryParam = new juce::AudioParameterFloat(
-        "dry", "Dry Level", 0.0f, 1.0f, 0.67f));
-
-    addParameter(freezeParam = new juce::AudioParameterBool(
-        "freeze", "Freeze", false));
+    // addParameter(roomSizeParam = new juce::AudioParameterFloat(
+    // "roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
+    //
+    // addParameter(dampingParam = new juce::AudioParameterFloat(
+    //     "damping", "Damping", 0.0f, 1.0f, 0.5f));
+    //
+    // addParameter(widthParam = new juce::AudioParameterFloat(
+    //     "width", "Width", 0.0f, 1.0f, 1.0f));
+    //
+    // addParameter(wetParam = new juce::AudioParameterFloat(
+    //     "wet", "Wet Level", 0.0f, 1.0f, 0.33f));
+    //
+    // addParameter(dryParam = new juce::AudioParameterFloat(
+    //     "dry", "Dry Level", 0.0f, 1.0f, 0.67f));
+    //
+    // addParameter(freezeParam = new juce::AudioParameterBool(
+    //     "freeze", "Freeze", false));
 
 
 }
@@ -168,12 +169,12 @@ void TestReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // Update reverb parameters
-    reverbParams.roomSize   = roomSizeParam->get();
-    reverbParams.damping    = dampingParam->get();
-    reverbParams.width      = widthParam->get();
-    reverbParams.wetLevel   = wetParam->get();
-    reverbParams.dryLevel   = dryParam->get();
-    reverbParams.freezeMode = freezeParam->get();
+    reverbParams.roomSize   = *apvts.getRawParameterValue("roomSize");
+    reverbParams.damping    = *apvts.getRawParameterValue("roomSize");
+    reverbParams.width      = *apvts.getRawParameterValue("roomSize");
+    reverbParams.wetLevel   = *apvts.getRawParameterValue("roomSize");
+    reverbParams.dryLevel   = *apvts.getRawParameterValue("roomSize");
+    reverbParams.freezeMode = *apvts.getRawParameterValue("roomSize");
 
     reverb.setParameters (reverbParams);
 
@@ -209,6 +210,22 @@ void TestReverbAudioProcessor::setStateInformation (const void* data, int sizeIn
     // whose contents will have been created by the getStateInformation() call.
 }
 
+juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    // Create parameters for the reverb effect
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.33f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
+    layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
+
+
+
+    return layout;
+}
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

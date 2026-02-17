@@ -53,16 +53,19 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    juce::AudioProcessorValueTreeState apvts;
 
 private:
     //==============================================================================
-    juce::AudioParameterFloat* roomSizeParam;
-    juce::AudioParameterFloat* dampingParam;
-    juce::AudioParameterFloat* widthParam;
-    juce::AudioParameterFloat* wetParam;
-    juce::AudioParameterFloat* dryParam;
-    juce::AudioParameterBool* freezeParam;
+    // juce::AudioParameterFloat* roomSizeParam;
+    // juce::AudioParameterFloat* dampingParam;
+    // juce::AudioParameterFloat* widthParam;
+    // juce::AudioParameterFloat* wetParam;
+    // juce::AudioParameterFloat* dryParam;
+    // juce::AudioParameterBool* freezeParam;
 
+
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     juce::dsp::Reverb reverb;
     juce::dsp::Reverb::Parameters reverbParams;
 };
