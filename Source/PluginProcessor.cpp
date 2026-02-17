@@ -39,6 +39,8 @@ TestReverbAudioProcessor::TestReverbAudioProcessor()
 
     addParameter(freezeParam = new juce::AudioParameterBool(
         "freeze", "Freeze", false));
+
+
 }
 
 TestReverbAudioProcessor::~TestReverbAudioProcessor()
@@ -189,7 +191,8 @@ bool TestReverbAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* TestReverbAudioProcessor::createEditor()
 {
-    return new TestReverbAudioProcessorEditor (*this);
+    // return new TestReverbAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor (*this);
 }
 
 //==============================================================================
