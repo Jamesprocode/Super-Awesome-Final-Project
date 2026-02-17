@@ -118,6 +118,11 @@ void TestReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     spec.maximumBlockSize = samplesPerBlock;
     spec.numChannels = getTotalNumOutputChannels();
 
+    lowShelfFilter.prepare(spec);
+    lowMidPeakFilter.prepare(spec);
+    highMidPeakFilter.prepare(spec);
+    highShelfFilter.prepare(spec);
+
     reverb.prepare(spec);
 }
 
@@ -168,19 +173,33 @@ void TestReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    juce::dsp::AudioBlock<float> block (buffer);
+    juce::dsp::ProcessContextReplacing<float> context (block);
+
+    auto sampleRate = getSampleRate();
+
+    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts.getRawParameterValue("lowFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowGain")->load()));
+    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("lowMidFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowMidGain")->load()));
+    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("highMidFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highMidGain")->load()));
+    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts.getRawParameterValue("highFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highGain")->load()));
+
+    lowShelfFilter.process(context);
+    lowMidPeakFilter.process(context);
+    highMidPeakFilter.process(context);
+    highShelfFilter.process(context);
     // Update reverb parameters
     reverbParams.roomSize   = *apvts.getRawParameterValue("roomSize");
-    reverbParams.damping    = *apvts.getRawParameterValue("roomSize");
-    reverbParams.width      = *apvts.getRawParameterValue("roomSize");
-    reverbParams.wetLevel   = *apvts.getRawParameterValue("roomSize");
-    reverbParams.dryLevel   = *apvts.getRawParameterValue("roomSize");
-    reverbParams.freezeMode = *apvts.getRawParameterValue("roomSize");
+    reverbParams.damping    = *apvts.getRawParameterValue("dampling");
+    reverbParams.width      = *apvts.getRawParameterValue("width");
+    reverbParams.wetLevel   = *apvts.getRawParameterValue("wet");
+    reverbParams.dryLevel   = *apvts.getRawParameterValue("dry");
+    reverbParams.freezeMode = *apvts.getRawParameterValue("Freeze");
 
     reverb.setParameters (reverbParams);
 
     // Process the entire buffer at once (stereo)
-    juce::dsp::AudioBlock<float> block (buffer);
-    juce::dsp::ProcessContextReplacing<float> context (block);
+    // juce::dsp::AudioBlock<float> block (buffer);
+    // juce::dsp::ProcessContextReplacing<float> context (block);
     reverb.process (context);
 }
 
@@ -214,18 +233,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::cr
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    // Create parameters for the reverb effect
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.33f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
-    layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
-
     // Create parameters for the EQ effect
     // Low Band (Low Shelf)
     layout.add(std::make_unique<juce::AudioParameterFloat>("lowFreq", "Low Freq", 20.0f, 500.0f, 200.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("lowGain", "Low Gain", -24.0f, 24.0f, 0.0f));
+
 
     // Low-Mid Band (Peak)
     layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidFreq", "Low-Mid Freq", 200.0f, 2000.0f,500.0f));
@@ -240,6 +252,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::cr
     // High Band (High Shelf)
     layout.add(std::make_unique<juce::AudioParameterFloat>("highFreq", "High Freq", 5000.0f, 20000.0f, 10000.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("highGain", "High Gain", -24.0f, 24.0f, 0.0f));
+
+    // Create parameters for the reverb effect
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.33f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
+    layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
+
+
 
     return layout;
 }

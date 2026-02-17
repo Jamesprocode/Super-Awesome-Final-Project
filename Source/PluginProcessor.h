@@ -63,6 +63,10 @@ private:
     // juce::AudioParameterFloat* wetParam;
     // juce::AudioParameterFloat* dryParam;
     // juce::AudioParameterBool* freezeParam;
+    using Filter = juce::dsp::IIR::Filter<float>;
+    using Coefficients = juce::dsp::IIR::Coefficients<float>;
+
+    juce::dsp::ProcessorDuplicator<Filter, Coefficients> lowShelfFilter, lowMidPeakFilter, highMidPeakFilter, highShelfFilter;
 
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
