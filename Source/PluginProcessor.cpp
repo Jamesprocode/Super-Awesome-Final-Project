@@ -222,7 +222,24 @@ juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::cr
     layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
 
+    // Create parameters for the EQ effect
+    // Low Band (Low Shelf)
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowFreq", "Low Freq", 20.0f, 500.0f, 200.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowGain", "Low Gain", -24.0f, 24.0f, 0.0f));
 
+    // Low-Mid Band (Peak)
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidFreq", "Low-Mid Freq", 200.0f, 2000.0f,500.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidGain", "Low-Mid Gain", -24.0f, 24.0f, 0.0f));
+
+    // High-Mid Band (Peak)
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidFreq", "High-Mid Freq", 2000.0f, 8000.0f,
+    3000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidGain", "High-Mid Gain", -24.0f, 24.0f,
+    0.0f));
+
+    // High Band (High Shelf)
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highFreq", "High Freq", 5000.0f, 20000.0f, 10000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highGain", "High Gain", -24.0f, 24.0f, 0.0f));
 
     return layout;
 }
