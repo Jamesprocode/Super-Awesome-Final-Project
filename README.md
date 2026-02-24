@@ -36,6 +36,9 @@ We would create this plugin with JUCE, an audio plugin development framework tha
 ---
 
 ## 4. UI/UX Design
+* **UI Mockup:**
+
+![A basic drawing of the two main plugin screens. The top screen has a big control knob with the name of the preset it is controlling in the middle, and the bottom screen has several sliders corresponding to several different EQ parameters. Both screens have tabs at the bottom left to switch between the two screens.](ui-diagram.png "UI for the two main screens")
 * **Visual Elements:**
 * Main UI: Simple layout with a couple of knobs to control the overall sound
 * More detailed layout with individual plugin controls displayed
