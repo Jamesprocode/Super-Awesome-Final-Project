@@ -124,6 +124,8 @@ void TestReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     highShelfFilter.prepare(spec);
 
     reverb.prepare(spec);
+
+    comp.prepare(spec);
 }
 
 void TestReverbAudioProcessor::releaseResources()
@@ -197,6 +199,13 @@ void TestReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     reverb.setParameters (reverbParams);
 
+    // Update compressor parameters
+    comp.setThreshold(*apvts.getRawParameterValue("threshold"));
+    comp.setRatio(*apvts.getRawParameterValue("ratio"));
+    comp.setAttack(*apvts.getRawParameterValue("attack"));
+    comp.setRelease(*apvts.getRawParameterValue("release"));
+
+
     // Process the entire buffer at once (stereo)
     // juce::dsp::AudioBlock<float> block (buffer);
     // juce::dsp::ProcessContextReplacing<float> context (block);
@@ -260,6 +269,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::cr
     layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.33f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
+
+    // Create parameter for compressor effect
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("threshold", "Threshold", -60.0f, 0.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("ratio", "Ratio", 1.0f, 10.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("attack", "Attack", 2.0f, 200.0f, 2.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("release", "Release", 30.0f, 1000.0f, 30.0f));
 
 
 

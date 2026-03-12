@@ -72,4 +72,7 @@ private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     juce::dsp::Reverb reverb;
     juce::dsp::Reverb::Parameters reverbParams;
+
+    // Create the compressor
+    juce::dsp::Compressor<float> comp;
 };
