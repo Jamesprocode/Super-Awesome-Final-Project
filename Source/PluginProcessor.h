@@ -14,12 +14,12 @@
 //==============================================================================
 /**
 */
-class TestReverbAudioProcessor  : public juce::AudioProcessor
+class SuperAwesomeVocalChainAudioProcessor  : public juce::AudioProcessor
 {
 public:
     //==============================================================================
-    TestReverbAudioProcessor();
-    ~TestReverbAudioProcessor() override;
+    SuperAwesomeVocalChainAudioProcessor();
+    ~SuperAwesomeVocalChainAudioProcessor() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

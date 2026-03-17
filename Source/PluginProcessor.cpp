@@ -10,7 +10,7 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-TestReverbAudioProcessor::TestReverbAudioProcessor()
+SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
@@ -23,38 +23,20 @@ TestReverbAudioProcessor::TestReverbAudioProcessor()
         apvts(*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
-    // addParameter(roomSizeParam = new juce::AudioParameterFloat(
-    // "roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
-    //
-    // addParameter(dampingParam = new juce::AudioParameterFloat(
-    //     "damping", "Damping", 0.0f, 1.0f, 0.5f));
-    //
-    // addParameter(widthParam = new juce::AudioParameterFloat(
-    //     "width", "Width", 0.0f, 1.0f, 1.0f));
-    //
-    // addParameter(wetParam = new juce::AudioParameterFloat(
-    //     "wet", "Wet Level", 0.0f, 1.0f, 0.33f));
-    //
-    // addParameter(dryParam = new juce::AudioParameterFloat(
-    //     "dry", "Dry Level", 0.0f, 1.0f, 0.67f));
-    //
-    // addParameter(freezeParam = new juce::AudioParameterBool(
-    //     "freeze", "Freeze", false));
-
 
 }
 
-TestReverbAudioProcessor::~TestReverbAudioProcessor()
+SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
 {
 }
 
 //==============================================================================
-const juce::String TestReverbAudioProcessor::getName() const
+const juce::String SuperAwesomeVocalChainAudioProcessor::getName() const
 {
     return JucePlugin_Name;
 }
 
-bool TestReverbAudioProcessor::acceptsMidi() const
+bool SuperAwesomeVocalChainAudioProcessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
     return true;
@@ -63,7 +45,7 @@ bool TestReverbAudioProcessor::acceptsMidi() const
    #endif
 }
 
-bool TestReverbAudioProcessor::producesMidi() const
+bool SuperAwesomeVocalChainAudioProcessor::producesMidi() const
 {
    #if JucePlugin_ProducesMidiOutput
     return true;
@@ -72,7 +54,7 @@ bool TestReverbAudioProcessor::producesMidi() const
    #endif
 }
 
-bool TestReverbAudioProcessor::isMidiEffect() const
+bool SuperAwesomeVocalChainAudioProcessor::isMidiEffect() const
 {
    #if JucePlugin_IsMidiEffect
     return true;
@@ -81,37 +63,37 @@ bool TestReverbAudioProcessor::isMidiEffect() const
    #endif
 }
 
-double TestReverbAudioProcessor::getTailLengthSeconds() const
+double SuperAwesomeVocalChainAudioProcessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
 
-int TestReverbAudioProcessor::getNumPrograms()
+int SuperAwesomeVocalChainAudioProcessor::getNumPrograms()
 {
     return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int TestReverbAudioProcessor::getCurrentProgram()
+int SuperAwesomeVocalChainAudioProcessor::getCurrentProgram()
 {
     return 0;
 }
 
-void TestReverbAudioProcessor::setCurrentProgram (int index)
+void SuperAwesomeVocalChainAudioProcessor::setCurrentProgram (int index)
 {
 }
 
-const juce::String TestReverbAudioProcessor::getProgramName (int index)
+const juce::String SuperAwesomeVocalChainAudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
-void TestReverbAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void SuperAwesomeVocalChainAudioProcessor::changeProgramName (int index, const juce::String& newName)
 {
 }
 
 //==============================================================================
-void TestReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
@@ -128,14 +110,14 @@ void TestReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     comp.prepare(spec);
 }
 
-void TestReverbAudioProcessor::releaseResources()
+void SuperAwesomeVocalChainAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool TestReverbAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool SuperAwesomeVocalChainAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
   #if JucePlugin_IsMidiEffect
     juce::ignoreUnused (layouts);
@@ -160,7 +142,7 @@ bool TestReverbAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
 }
 #endif
 
-void TestReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -180,24 +162,10 @@ void TestReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     auto sampleRate = getSampleRate();
 
-    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts.getRawParameterValue("lowFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowGain")->load()));
-    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("lowMidFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowMidGain")->load()));
-    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("highMidFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highMidGain")->load()));
-    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts.getRawParameterValue("highFreq")->load(), 0.707f, juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highGain")->load()));
-
-    lowShelfFilter.process(context);
-    lowMidPeakFilter.process(context);
-    highMidPeakFilter.process(context);
-    highShelfFilter.process(context);
-    // Update reverb parameters
-    reverbParams.roomSize   = *apvts.getRawParameterValue("roomSize");
-    reverbParams.damping    = *apvts.getRawParameterValue("dampling");
-    reverbParams.width      = *apvts.getRawParameterValue("width");
-    reverbParams.wetLevel   = *apvts.getRawParameterValue("wet");
-    reverbParams.dryLevel   = *apvts.getRawParameterValue("dry");
-    reverbParams.freezeMode = *apvts.getRawParameterValue("Freeze");
-
-    reverb.setParameters (reverbParams);
+    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts.getRawParameterValue("lowFreq")->load(), apvts.getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowGain")->load()));
+    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("lowMidFreq")->load(), apvts.getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowMidGain")->load()));
+    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("highMidFreq")->load(), apvts.getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highMidGain")->load()));
+    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts.getRawParameterValue("highFreq")->load(), apvts.getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highGain")->load()));
 
     // Update compressor parameters
     comp.setThreshold(*apvts.getRawParameterValue("threshold"));
@@ -206,39 +174,57 @@ void TestReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     comp.setRelease(*apvts.getRawParameterValue("release"));
 
 
+    // Update reverb parameters
+    reverbParams.roomSize   = *apvts.getRawParameterValue("roomSize");
+    reverbParams.damping    = *apvts.getRawParameterValue("damping");
+    reverbParams.width      = *apvts.getRawParameterValue("width");
+    reverbParams.wetLevel   = *apvts.getRawParameterValue("wet");
+    reverbParams.dryLevel   = *apvts.getRawParameterValue("dry");
+    reverbParams.freezeMode = *apvts.getRawParameterValue("freeze");
+
+    reverb.setParameters (reverbParams);
+
+
     // Process the entire buffer at once (stereo)
     // juce::dsp::AudioBlock<float> block (buffer);
     // juce::dsp::ProcessContextReplacing<float> context (block);
+    //process eq
+    lowShelfFilter.process(context);
+    lowMidPeakFilter.process(context);
+    highMidPeakFilter.process(context);
+    highShelfFilter.process(context);
+    //process reverb
     reverb.process (context);
+    //process compressor
+    comp.process(context);
 }
 
 //==============================================================================
-bool TestReverbAudioProcessor::hasEditor() const
+bool SuperAwesomeVocalChainAudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* TestReverbAudioProcessor::createEditor()
+juce::AudioProcessorEditor* SuperAwesomeVocalChainAudioProcessor::createEditor()
 {
-    // return new TestReverbAudioProcessorEditor (*this);
-    return new juce::GenericAudioProcessorEditor (*this);
+    return new SuperAwesomeVocalChainAudioProcessorEditor (*this);
 }
 
 //==============================================================================
-void TestReverbAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void SuperAwesomeVocalChainAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
 }
 
-void TestReverbAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void SuperAwesomeVocalChainAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
 
-juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
@@ -246,21 +232,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::cr
     // Low Band (Low Shelf)
     layout.add(std::make_unique<juce::AudioParameterFloat>("lowFreq", "Low Freq", 20.0f, 500.0f, 200.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("lowGain", "Low Gain", -24.0f, 24.0f, 0.0f));
-
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowQ", "Low Q", 0.1f, 10.0f, 0.707f));
 
     // Low-Mid Band (Peak)
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidFreq", "Low-Mid Freq", 200.0f, 2000.0f,500.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidFreq", "Low-Mid Freq", 200.0f, 2000.0f, 500.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidGain", "Low-Mid Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidQ", "Low-Mid Q", 0.1f, 10.0f, 0.707f));
 
     // High-Mid Band (Peak)
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidFreq", "High-Mid Freq", 2000.0f, 8000.0f,
-    3000.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidGain", "High-Mid Gain", -24.0f, 24.0f,
-    0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidFreq", "High-Mid Freq", 2000.0f, 8000.0f, 3000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidGain", "High-Mid Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidQ", "High-Mid Q", 0.1f, 10.0f, 0.707f));
 
     // High Band (High Shelf)
     layout.add(std::make_unique<juce::AudioParameterFloat>("highFreq", "High Freq", 5000.0f, 20000.0f, 10000.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("highGain", "High Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highQ", "High Q", 0.1f, 10.0f, 0.707f));
 
     // Create parameters for the reverb effect
     layout.add(std::make_unique<juce::AudioParameterFloat> ("roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
@@ -284,5 +271,5 @@ juce::AudioProcessorValueTreeState::ParameterLayout TestReverbAudioProcessor::cr
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new TestReverbAudioProcessor();
+    return new SuperAwesomeVocalChainAudioProcessor();
 }

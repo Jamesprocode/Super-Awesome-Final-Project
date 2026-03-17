@@ -48,7 +48,7 @@ juce_add_plugin(${PROJECT_NAME}
         PLUGIN_MANUFACTURER_CODE Tap1
         PLUGIN_CODE Reg0
         FORMATS VST3 AU Standalone
-        PRODUCT_NAME "Test Reverb"
+        PRODUCT_NAME "Super Awesome Vocal Chain"
 )
 
 # How we want our SourceFiles to appear in our IDE
