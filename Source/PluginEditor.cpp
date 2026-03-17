@@ -21,7 +21,7 @@ static void setupSectionLabel (juce::Graphics& g, const juce::String& text, juce
 SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessorEditor (SuperAwesomeVocalChainAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    setSize (500, 420);
+    setSize (1000, 840);
 
     // Page label
     pageLabel.setFont (juce::FontOptions (20.0f, juce::Font::bold));
