@@ -110,6 +110,12 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
     comp.prepare(spec);
 
     chorus.prepare(spec);
+
+    saturator.get<1>().functionToUse = [](float x) noexcept {
+        return std::tanh(x); // set waveshaping to hyperbolic tangent soft clipping
+        };
+
+    saturator.prepare(spec);
 }
 
 void SuperAwesomeVocalChainAudioProcessor::releaseResources()
@@ -194,6 +200,10 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float
     chorus.setFeedback(*apvts.getRawParameterValue("chorfeedback"));
     chorus.setMix(*apvts.getRawParameterValue("chormix"));
 
+    //Update saturator parameters
+    saturator.get<0>().setGainLinear(*apvts.getRawParameterValue("preGain"));
+    saturator.get<2>().setGainLinear(*apvts.getRawParameterValue("postGain"));
+
     // Process the entire buffer at once (stereo)
     // juce::dsp::AudioBlock<float> block (buffer);
     // juce::dsp::ProcessContextReplacing<float> context (block);
@@ -202,12 +212,14 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float
     lowMidPeakFilter.process(context);
     highMidPeakFilter.process(context);
     highShelfFilter.process(context);
+    //process saturator
+    saturator.process(context);
     //process reverb
     reverb.process (context);
-    //process compressor
-    comp.process(context);
     //process chorus
     chorus.process(context);
+    //process compressor
+    comp.process(context);
 }
 
 //==============================================================================
@@ -280,6 +292,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat>("centerdelay", "Center Delay", 1.0f, 100.0f, 10.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("chorfeedback", "Feedback", -1.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("chormix", "Mix", 0.0f, 1.0f, 0.5f));
+
+    //Create parameters for Saturator
+    layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 1.0f, 0.5f));
 
 
     return layout;

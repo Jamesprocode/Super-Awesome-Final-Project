@@ -78,4 +78,11 @@ private:
 
     //Create the chorus
     juce::dsp::Chorus<float> chorus;
+
+    //Create Saturator
+    juce::dsp::ProcessorChain<
+        juce::dsp::Gain<float>,
+        juce::dsp::WaveShaper<float>,
+        juce::dsp::Gain<float>
+    > saturator;
 };
