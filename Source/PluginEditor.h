@@ -68,6 +68,10 @@ private:
     juce::Label  roomSizeLabel,  dampingLabel,  widthLabel,  wetLabel,  dryLabel;
     juce::ToggleButton freezeButton;
 
+    //Chorus
+    juce::Slider chorusRateSlider, chorusDepthSlider, chorusCenterDelaySlider, chorusFeedbackSlider, chorusMixSlider;
+    juce::Label chorusRateLabel, chorusDepthLabel, chorusCenterDelayLabel, chorusFeedbackLabel, chorusMixLabel;
+
     // Attachments
     std::unique_ptr<SliderAttachment> lowFreqAtt,    lowGainAtt,    lowQAtt;
     std::unique_ptr<SliderAttachment> lowMidFreqAtt, lowMidGainAtt, lowMidQAtt;

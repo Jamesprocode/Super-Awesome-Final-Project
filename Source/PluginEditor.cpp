@@ -74,6 +74,13 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupKnob (attackSlider,    attackLabel,    "Attack");
     setupKnob (releaseSlider,   releaseLabel,   "Release");
 
+    //Chorus knobs
+    setupKnob(chorusRateSlider, chorusRateLabel, "Rate");
+    setupKnob(chorusDepthSlider, chorusDepthLabel, "Depth");
+    setupKnob(chorusCenterDelaySlider, chorusCenterDelayLabel, "Center Delay");
+    setupKnob(chorusFeedbackSlider, chorusFeedbackLabel, "Feedback");
+    setupKnob(chorusMixSlider, chorusMixLabel, "Mix");
+
     // Reverb knobs
     setupKnob (roomSizeSlider, roomSizeLabel, "Room Size");
     setupKnob (dampingSlider,  dampingLabel,  "Damping");
@@ -232,6 +239,13 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
         // Compressor row
         placeRow ({ {&thresholdSlider, &thresholdLabel}, {&ratioSlider, &ratioLabel},
                     {&attackSlider, &attackLabel}, {&releaseSlider, &releaseLabel} });
+
+        y += sectionH;
+
+        //Chorus row
+        placeRow({ {&chorusRateSlider, &chorusRateLabel}, {&chorusDepthSlider, &chorusDepthLabel},
+                    {&chorusCenterDelaySlider, &chorusCenterDelayLabel}, {&chorusFeedbackSlider, &chorusFeedbackLabel},
+                    {&chorusMixSlider, &chorusMixLabel} });
 
         y += sectionH;
 
