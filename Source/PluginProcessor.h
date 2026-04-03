@@ -75,4 +75,7 @@ private:
 
     // Create the compressor
     juce::dsp::Compressor<float> comp;
+
+    //Create the chorus
+    juce::dsp::Chorus<float> chorus;
 };

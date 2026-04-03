@@ -108,6 +108,8 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
     reverb.prepare(spec);
 
     comp.prepare(spec);
+
+    chorus.prepare(spec);
 }
 
 void SuperAwesomeVocalChainAudioProcessor::releaseResources()
@@ -185,6 +187,13 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float
     reverb.setParameters (reverbParams);
 
 
+    //Update chorus parameters
+    chorus.setRate(*apvts.getRawParameterValue("lforate"));
+    chorus.setDepth(*apvts.getRawParameterValue("lfodepth"));
+    chorus.setCentreDelay(*apvts.getRawParameterValue("centerdelay"));
+    chorus.setFeedback(*apvts.getRawParameterValue("chorfeedback"));
+    chorus.setMix(*apvts.getRawParameterValue("chormix"));
+
     // Process the entire buffer at once (stereo)
     // juce::dsp::AudioBlock<float> block (buffer);
     // juce::dsp::ProcessContextReplacing<float> context (block);
@@ -197,6 +206,8 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float
     reverb.process (context);
     //process compressor
     comp.process(context);
+    //process chorus
+    chorus.process(context);
 }
 
 //==============================================================================
@@ -263,6 +274,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat> ("attack", "Attack", 2.0f, 200.0f, 2.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("release", "Release", 30.0f, 1000.0f, 30.0f));
 
+    //Create parameters for Chorus effect
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("lforate", "Rate",   0.0f, 100.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lfodepth", "Depth", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("centerdelay", "Center Delay", 1.0f, 100.0f, 10.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("chorfeedback", "Feedback", -1.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("chormix", "Mix", 0.0f, 1.0f, 0.5f));
 
 
     return layout;
