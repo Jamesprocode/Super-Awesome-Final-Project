@@ -10,11 +10,13 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
-
+#include "melatonin_inspector/melatonin_inspector.h"
 #include "PluginProcessor.h"
 
 //==============================================================================
-class SuperAwesomeVocalChainAudioProcessorEditor  : public juce::AudioProcessorEditor
+class SuperAwesomeVocalChainAudioProcessorEditor
+    : public juce::AudioProcessorEditor,
+      public juce::Timer
 {
 public:
     SuperAwesomeVocalChainAudioProcessorEditor (SuperAwesomeVocalChainAudioProcessor&);
@@ -27,62 +29,66 @@ private:
     SuperAwesomeVocalChainAudioProcessor& audioProcessor;
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 
-    // Page navigation
-    int currentPage = 0;
-    static constexpr int numPages = 3;
-    const juce::String pageNames[numPages] = { "Macro Control", "Macro Mapping", "All Parameters" };
+    // All your UI lives inside this content component
+    juce::Component content;
 
-    juce::TextButton prevButton { "<" };
-    juce::TextButton nextButton { ">" };
-    juce::Label pageLabel;
+    // The three tabs and their buttons
+    juce::Component macroPage;
+    juce::Component mapPage;
+    juce::Component detailPage;
 
-    juce::Component pages[numPages];
+    juce::TextButton macroTab { "MACRO" };
+    juce::TextButton mapTab { "MAPPING" };
+    juce::TextButton detailTab { "DETAILED" };
 
-    // Page 1 - Macro Control
+    void showPage(int index);
+
+    // Macro page components
     juce::Slider macroKnob;
-    juce::Label  macroLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroKnobAttachment;
 
-    // Page 3 - All Parameters (scrollable)
-    juce::Viewport parametersViewport;
-    juce::Component parametersContent;
-
-    // EQ
-    juce::Slider lowFreqSlider,    lowGainSlider,    lowQSlider;
+    // Detailed page components
+    // EQ parameters
+    juce::Slider lowFreqSlider, lowGainSlider, lowQSlider;
     juce::Slider lowMidFreqSlider, lowMidGainSlider, lowMidQSlider;
-    juce::Slider highMidFreqSlider,highMidGainSlider,highMidQSlider;
-    juce::Slider highFreqSlider,   highGainSlider,   highQSlider;
+    juce::Slider highMidFreqSlider, highMidGainSlider, highMidQSlider;
+    juce::Slider highFreqSlider, highGainSlider, highQSlider;
 
-    juce::Label lowFreqLabel,    lowGainLabel,    lowQLabel;
+    juce::Label eqLabel;
+    juce::Label lowFreqLabel, lowGainLabel, lowQLabel;
     juce::Label lowMidFreqLabel, lowMidGainLabel, lowMidQLabel;
-    juce::Label highMidFreqLabel,highMidGainLabel,highMidQLabel;
-    juce::Label highFreqLabel,   highGainLabel,   highQLabel;
+    juce::Label highMidFreqLabel, highMidGainLabel, highMidQLabel;
+    juce::Label highFreqLabel, highGainLabel, highQLabel;
 
-    // Compressor
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lowFreqAttach, lowGainAttach, lowQAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lowMidFreqAttach, lowMidGainAttach, lowMidQAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> highMidFreqAttach, highMidGainAttach, highMidQAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> highFreqAttach, highGainAttach, highQAttach;
+
+    // Compressor parameters
     juce::Slider thresholdSlider, ratioSlider, attackSlider, releaseSlider;
-    juce::Label  thresholdLabel,  ratioLabel,  attackLabel,  releaseLabel;
+    juce::Label compLabel;
+    juce::Label thresholdLabel, ratioLabel, attackLabel, releaseLabel;
 
-    // Reverb
-    juce::Slider roomSizeSlider, dampingSlider, widthSlider, wetSlider, drySlider;
-    juce::Label  roomSizeLabel,  dampingLabel,  widthLabel,  wetLabel,  dryLabel;
-    juce::ToggleButton freezeButton;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> thresholdAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ratioAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attackAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> releaseAttach;
 
-    //Chorus
-    juce::Slider chorusRateSlider, chorusDepthSlider, chorusCenterDelaySlider, chorusFeedbackSlider, chorusMixSlider;
-    juce::Label chorusRateLabel, chorusDepthLabel, chorusCenterDelayLabel, chorusFeedbackLabel, chorusMixLabel;
+    // Saturator parameters
+    juce::Slider preGainSlider, postGainSlider;
+    juce::Label saturateLabel;
+    juce::Label preGainLabel, postGainLabel;
 
-    // Attachments
-    std::unique_ptr<SliderAttachment> lowFreqAtt,    lowGainAtt,    lowQAtt;
-    std::unique_ptr<SliderAttachment> lowMidFreqAtt, lowMidGainAtt, lowMidQAtt;
-    std::unique_ptr<SliderAttachment> highMidFreqAtt,highMidGainAtt,highMidQAtt;
-    std::unique_ptr<SliderAttachment> highFreqAtt,   highGainAtt,   highQAtt;
-    std::unique_ptr<SliderAttachment> thresholdAtt,  ratioAtt,      attackAtt, releaseAtt;
-    std::unique_ptr<SliderAttachment> roomSizeAtt,   dampingAtt,    widthAtt,  wetAtt, dryAtt;
-    std::unique_ptr<ButtonAttachment> freezeAtt;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> preGainAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> postGainAttach;
 
-    void setupKnob (juce::Slider& slider, juce::Label& label, const juce::String& name);
-    void showPage (int index);
+    // Inspector inspects `content`, not the whole editor (and not itself)
+    std::unique_ptr<melatonin::Inspector> inspector;
+
+    void updateVisibility();
+    void timerCallback() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SuperAwesomeVocalChainAudioProcessorEditor)
 };

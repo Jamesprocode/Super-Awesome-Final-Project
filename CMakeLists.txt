@@ -35,6 +35,13 @@ set(SourceFiles
         Source/PluginProcessor.h
 )
 
+Include (FetchContent)
+FetchContent_Declare (melatonin_inspector
+        GIT_REPOSITORY https://github.com/sudara/melatonin_inspector.git
+        GIT_TAG origin/main
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/melatonin_inspector)
+FetchContent_MakeAvailable (melatonin_inspector)
+
 # Change these to your own preferences
 juce_add_plugin(${PROJECT_NAME}
         COMPANY_NAME SuperAwesome
@@ -81,5 +88,6 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
+        PRIVATE
+        melatonin_inspector
 )
-
