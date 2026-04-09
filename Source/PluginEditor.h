@@ -49,6 +49,9 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroKnobAttachment;
 
     // Detailed page components
+    juce::Viewport detailViewport;
+    juce::Component detailContent;
+
     // EQ parameters
     juce::Slider lowFreqSlider, lowGainSlider, lowQSlider;
     juce::Slider lowMidFreqSlider, lowMidGainSlider, lowMidQSlider;
@@ -70,19 +73,25 @@ private:
     juce::Slider thresholdSlider, ratioSlider, attackSlider, releaseSlider;
     juce::Label compLabel;
     juce::Label thresholdLabel, ratioLabel, attackLabel, releaseLabel;
-
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> thresholdAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ratioAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attackAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> releaseAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> thresholdAttach, ratioAttach, attackAttach, releaseAttach;
 
     // Saturator parameters
     juce::Slider preGainSlider, postGainSlider;
     juce::Label saturateLabel;
     juce::Label preGainLabel, postGainLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> preGainAttach, postGainAttach;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> preGainAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> postGainAttach;
+    // Chorus parameters
+    juce::Slider lfoRateSlider, lfoDepthSlider, centerDelaySlider, chorusFeedbackSlider, chorusMixSlider;
+    juce::Label chorusLabel;
+    juce::Label lfoRateLabel, lfoDepthLabel, centerDelayLabel, chorusFeedbackLabel, chorusMixLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lfoRateAttach, lfoDepthAttach, centerDelayAttach, chorusFeedbackAttach, chorusMixAttach;
+
+    // Reverb parameters
+    juce::Slider roomSizeSlider, dampingSlider, reverbWidthSlider, reverbWetSlider, reverbDrySlider, freezeModeSlider;
+    juce::Label reverbLabel;
+    juce::Label roomSizeLabel, dampingLabel, reverbWidthLabel, reverbWetLabel, reverbDryLabel, freezeModeLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> roomSizeAttach, dampingAttach, reverbWidthAttach, reverbWetAttach, reverbDryAttach, freezeModeAttach;
 
     // Inspector inspects `content`, not the whole editor (and not itself)
     std::unique_ptr<melatonin::Inspector> inspector;
