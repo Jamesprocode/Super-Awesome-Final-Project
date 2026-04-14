@@ -12,18 +12,19 @@
 //==============================================================================
 SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       ),
-        apvts(*this, nullptr, "Parameters", createParameterLayout())
+    : AudioProcessor(BusesProperties()
+#if ! JucePlugin_IsMidiEffect
+#if ! JucePlugin_IsSynth
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+#endif
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+    )
 #endif
 {
-
+    apvts = std::make_unique<juce::AudioProcessorValueTreeState>(
+        *this, nullptr, "Parameters", createParameterLayout()
+    );
 }
 
 SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
@@ -111,11 +112,19 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
 
     chorus.prepare(spec);
 
-    saturator.get<1>().functionToUse = [](float x) noexcept {
-        return std::tanh(x); // set waveshaping to hyperbolic tangent soft clipping
+    //set waveshaping function
+    auto& waveshaper = saturator.get<1>();
+
+    waveshaper.functionToUse = [](float x) noexcept {
+        return std::tanh(x); // hyperbolic tangent soft clipping
         };
 
     saturator.prepare(spec);
+
+    lowShelfFilter.state = juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, 1000.0f, 0.707f, 1.0f);
+    lowMidPeakFilter.state = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 1000.0f, 0.707f, 1.0f);
+    highMidPeakFilter.state = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 2000.0f, 0.707f, 1.0f);
+    highShelfFilter.state = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, 5000.0f, 0.707f, 1.0f);
 }
 
 void SuperAwesomeVocalChainAudioProcessor::releaseResources()
@@ -150,10 +159,10 @@ bool SuperAwesomeVocalChainAudioProcessor::isBusesLayoutSupported (const BusesLa
 }
 #endif
 
-void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     // In case we have more outputs than inputs, this code clears any output
@@ -163,46 +172,46 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+        buffer.clear(i, 0, buffer.getNumSamples());
 
-    juce::dsp::AudioBlock<float> block (buffer);
-    juce::dsp::ProcessContextReplacing<float> context (block);
+    juce::dsp::AudioBlock<float> block(buffer);
+    juce::dsp::ProcessContextReplacing<float> context(block);
 
     auto sampleRate = getSampleRate();
 
-    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts.getRawParameterValue("lowFreq")->load(), apvts.getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowGain")->load()));
-    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("lowMidFreq")->load(), apvts.getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("lowMidGain")->load()));
-    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts.getRawParameterValue("highMidFreq")->load(), apvts.getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highMidGain")->load()));
-    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts.getRawParameterValue("highFreq")->load(), apvts.getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts.getRawParameterValue("highGain")->load()));
+    lowShelfFilter.state = Coefficients::makeLowShelf(sampleRate, apvts->getRawParameterValue("lowFreq")->load(), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
+    lowMidPeakFilter.state = Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("lowMidFreq")->load(), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
+    highMidPeakFilter.state = Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("highMidFreq")->load(), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
+    highShelfFilter.state = Coefficients::makeHighShelf(sampleRate, apvts->getRawParameterValue("highFreq")->load(), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
 
     // Update compressor parameters
-    comp.setThreshold(*apvts.getRawParameterValue("threshold"));
-    comp.setRatio(*apvts.getRawParameterValue("ratio"));
-    comp.setAttack(*apvts.getRawParameterValue("attack"));
-    comp.setRelease(*apvts.getRawParameterValue("release"));
+    comp.setThreshold(*apvts->getRawParameterValue("threshold"));
+    comp.setRatio(*apvts->getRawParameterValue("ratio"));
+    comp.setAttack(*apvts->getRawParameterValue("attack"));
+    comp.setRelease(*apvts->getRawParameterValue("release"));
 
 
     // Update reverb parameters
-    reverbParams.roomSize   = *apvts.getRawParameterValue("roomSize");
-    reverbParams.damping    = *apvts.getRawParameterValue("damping");
-    reverbParams.width      = *apvts.getRawParameterValue("width");
-    reverbParams.wetLevel   = *apvts.getRawParameterValue("wet");
-    reverbParams.dryLevel   = *apvts.getRawParameterValue("dry");
-    reverbParams.freezeMode = *apvts.getRawParameterValue("freeze");
+    reverbParams.roomSize = *apvts->getRawParameterValue("roomSize");
+    reverbParams.damping = *apvts->getRawParameterValue("damping");
+    reverbParams.width = *apvts->getRawParameterValue("width");
+    reverbParams.wetLevel = *apvts->getRawParameterValue("wet");
+    reverbParams.dryLevel = *apvts->getRawParameterValue("dry");
+    reverbParams.freezeMode = *apvts->getRawParameterValue("freeze");
 
-    reverb.setParameters (reverbParams);
+    reverb.setParameters(reverbParams);
 
 
     //Update chorus parameters
-    chorus.setRate(*apvts.getRawParameterValue("lforate"));
-    chorus.setDepth(*apvts.getRawParameterValue("lfodepth"));
-    chorus.setCentreDelay(*apvts.getRawParameterValue("centerdelay"));
-    chorus.setFeedback(*apvts.getRawParameterValue("chorfeedback"));
-    chorus.setMix(*apvts.getRawParameterValue("chormix"));
+    chorus.setRate(*apvts->getRawParameterValue("lforate"));
+    chorus.setDepth(*apvts->getRawParameterValue("lfodepth"));
+    chorus.setCentreDelay(*apvts->getRawParameterValue("centerdelay"));
+    chorus.setFeedback(*apvts->getRawParameterValue("chorfeedback"));
+    chorus.setMix(*apvts->getRawParameterValue("chormix"));
 
     //Update saturator parameters
-    saturator.get<0>().setGainLinear(*apvts.getRawParameterValue("preGain"));
-    saturator.get<2>().setGainLinear(*apvts.getRawParameterValue("postGain"));
+    saturator.get<0>().setGainLinear(*apvts->getRawParameterValue("preGain"));
+    saturator.get<2>().setGainLinear(*apvts->getRawParameterValue("postGain"));
 
     // Process the entire buffer at once (stereo)
     // juce::dsp::AudioBlock<float> block (buffer);
@@ -215,12 +224,13 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock (juce::AudioBuffer<float
     //process saturator
     saturator.process(context);
     //process reverb
-    reverb.process (context);
+    reverb.process(context);
     //process chorus
     chorus.process(context);
     //process compressor
     comp.process(context);
 }
+
 
 //==============================================================================
 bool SuperAwesomeVocalChainAudioProcessor::hasEditor() const
