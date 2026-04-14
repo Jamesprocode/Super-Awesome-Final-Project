@@ -48,6 +48,10 @@ private:
     juce::Slider macroKnob;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroKnobAttachment;
 
+    // Mapping page components
+    juce::ComboBox paramListBox;
+    juce::ComboBox curveTypeBox;
+
     // Detailed page components
     juce::Viewport detailViewport;
     juce::Component detailContent;

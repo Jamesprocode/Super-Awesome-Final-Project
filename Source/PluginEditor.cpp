@@ -6,7 +6,7 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     (SuperAwesomeVocalChainAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    setSize (1000, 800);
+    setSize (1000, 600);
 
     // Content is the root for all your UI
     addAndMakeVisible(content);
@@ -39,6 +39,30 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
 
     macroKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
             audioProcessor.apvts, "macro", macroKnob);
+
+    // PAGE 2: mapping page
+    paramListBox.addItem("Low Frequency", 1);
+    paramListBox.addItem("Low Gain", 2);
+    paramListBox.addItem("Low Q", 3);
+    paramListBox.addItem("Low-Mid Frequency", 4);
+    paramListBox.addItem("Low-Mid Gain", 5);
+    paramListBox.addItem("Low-Mid Q", 6);
+    paramListBox.addItem("High-Mid Frequency", 7);
+    paramListBox.addItem("High-Mid Gain", 8);
+    paramListBox.addItem("High-Mid Q", 9);
+    paramListBox.addItem("High Frequency", 10);
+    paramListBox.addItem("High Gain", 11);
+    paramListBox.addItem("High Q", 12);
+
+    paramListBox.setSelectedId(1, juce::dontSendNotification);
+    mapPage.addAndMakeVisible(paramListBox);
+
+    curveTypeBox.addItem("Linear", 1);
+    curveTypeBox.addItem("Logarithmic", 2);
+
+    curveTypeBox.setSelectedId(1, juce::dontSendNotification);
+
+    mapPage.addAndMakeVisible(curveTypeBox);
 
     // PAGE 3: detailed page
     detailPage.addAndMakeVisible(detailViewport);
@@ -224,7 +248,27 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
     int mKnobSize = juce::jmin(macroPageArea.getWidth(), macroPageArea.getHeight()) * 0.6;
     macroKnob.setBounds(juce::Rectangle<int>(mKnobSize, mKnobSize).withCentre(macroPageArea.getCentre()));
 
-    // --- Detailed Layout (Scrolling Content) ---
+    // --- Mapping Layout ---
+    auto mapArea = mapPage.getLocalBounds().reduced(40);
+
+    const int comboHeight = 30;
+    const int comboWidth  = 200;
+
+    paramListBox.setBounds(
+        mapArea.getX(),
+        mapArea.getY(),
+        comboWidth,
+        comboHeight
+    );
+
+    curveTypeBox.setBounds(
+        mapArea.getRight() - comboWidth,
+        mapArea.getY(),
+        comboWidth,
+        comboHeight
+    );
+
+    // --- Detailed Layout ---
     const int sectionHeight = 320;
     const int knobSize = 70;
     const int spacing  = 20;
