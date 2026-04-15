@@ -200,7 +200,7 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     reverbWidthAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "width", reverbWidthSlider);
     reverbWetAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "wet", reverbWetSlider);
     reverbDryAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "dry", reverbDrySlider);
-    freezeModeAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "freezeMode", freezeModeSlider);
+    freezeModeAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "freeze", freezeModeSlider);
 
     inspector = std::make_unique<melatonin::Inspector>(content);
     addAndMakeVisible(*inspector);
