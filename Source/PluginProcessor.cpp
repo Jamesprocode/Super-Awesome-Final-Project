@@ -23,7 +23,15 @@ SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
         apvts(*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
-
+    // Default macro mapping: a "Clean -> Aggressive" vocal preset.
+    // Replace / extend via macroController.setMappings(...) from the UI.
+    macroController.setMappings({
+        { "threshold",   0.0f,  -24.0f, 1.0f },
+        { "ratio",       1.0f,    6.0f, 1.0f },
+        { "preGain",     1.0f,    3.0f, 1.0f },
+        { "highMidGain", 0.0f,    4.0f, 1.0f },
+        { "wet",         0.1f,    0.4f, 1.0f },
+    });
 }
 
 SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
@@ -297,6 +305,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 1.0f, 0.5f));
 
+    // Macro knob (0..1), drives mapped parameters via MacroController.
+    layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
 
     return layout;
 }
