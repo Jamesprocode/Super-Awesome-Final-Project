@@ -38,7 +38,7 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     macroPage.addAndMakeVisible(macroKnob);
 
     macroKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-            audioProcessor.apvts, "macro", macroKnob);
+            *audioProcessor.apvts, "macro", macroKnob);
 
     // PAGE 2: mapping page
     paramListBox.addItem("Low Frequency", 1);
@@ -95,9 +95,9 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(lowGainLabel, "L-Gain");
     setupLabel(lowQLabel,    "L-Q");
 
-    lowFreqAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lowFreq", lowFreqSlider);
-    lowGainAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lowGain", lowGainSlider);
-    lowQAttach    = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lowQ",    lowQSlider);
+    lowFreqAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lowFreq", lowFreqSlider);
+    lowGainAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lowGain", lowGainSlider);
+    lowQAttach    = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lowQ",    lowQSlider);
 
     // Low-mid band
     setupKnob(lowMidFreqSlider);
@@ -107,9 +107,9 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(lowMidGainLabel, "LM-Gain");
     setupLabel(lowMidQLabel,    "LM-Q");
 
-    lowMidFreqAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lowMidFreq", lowMidFreqSlider);
-    lowMidGainAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lowMidGain", lowMidGainSlider);
-    lowMidQAttach    = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lowMidQ",    lowMidQSlider);
+    lowMidFreqAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lowMidFreq", lowMidFreqSlider);
+    lowMidGainAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lowMidGain", lowMidGainSlider);
+    lowMidQAttach    = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lowMidQ",    lowMidQSlider);
 
     // High-mid band
     setupKnob(highMidFreqSlider);
@@ -119,9 +119,9 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(highMidGainLabel, "HM-Gain");
     setupLabel(highMidQLabel,    "HM-Q");
 
-    highMidFreqAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "highMidFreq", highMidFreqSlider);
-    highMidGainAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "highMidGain", highMidGainSlider);
-    highMidQAttach    = std::make_unique<SliderAttachment>(audioProcessor.apvts, "highMidQ",    highMidQSlider);
+    highMidFreqAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "highMidFreq", highMidFreqSlider);
+    highMidGainAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "highMidGain", highMidGainSlider);
+    highMidQAttach    = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "highMidQ",    highMidQSlider);
 
     // High band
     setupKnob(highFreqSlider);
@@ -131,9 +131,9 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(highGainLabel, "H-Gain");
     setupLabel(highQLabel,    "H-Q");
 
-    highFreqAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "highFreq", highFreqSlider);
-    highGainAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "highGain", highGainSlider);
-    highQAttach    = std::make_unique<SliderAttachment>(audioProcessor.apvts, "highQ",    highQSlider);
+    highFreqAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "highFreq", highFreqSlider);
+    highGainAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "highGain", highGainSlider);
+    highQAttach    = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "highQ",    highQSlider);
 
     // Compressor
     setupLabel(compLabel, "Compressor");
@@ -146,10 +146,10 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(attackLabel, "Attack");
     setupLabel(releaseLabel, "Release");
 
-    thresholdAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "threshold", thresholdSlider);
-    ratioAttach    = std::make_unique<SliderAttachment>(audioProcessor.apvts, "ratio",    ratioSlider);
-    attackAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "attack", attackSlider);
-    releaseAttach    = std::make_unique<SliderAttachment>(audioProcessor.apvts, "release",    releaseSlider);
+    thresholdAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "threshold", thresholdSlider);
+    ratioAttach    = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "ratio",    ratioSlider);
+    attackAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "attack", attackSlider);
+    releaseAttach    = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "release",    releaseSlider);
 
     // Saturator
     setupLabel(saturateLabel, "Saturation");
@@ -158,8 +158,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(preGainLabel, "Pre-Gain");
     setupLabel(postGainLabel, "Post-Gain");
 
-    preGainAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "preGain", preGainSlider);
-    postGainAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "postGain", postGainSlider);
+    preGainAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "preGain", preGainSlider);
+    postGainAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "postGain", postGainSlider);
 
     // Chorus
     setupLabel(chorusLabel, "Chorus");
@@ -174,11 +174,11 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(chorusFeedbackLabel, "Feedback");
     setupLabel(chorusMixLabel, "Mix");
 
-    lfoRateAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lforate", lfoRateSlider);
-    lfoDepthAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "lfodepth", lfoDepthSlider);
-    centerDelayAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "centerdelay", centerDelaySlider);
-    chorusFeedbackAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "chorfeedback", chorusFeedbackSlider);
-    chorusMixAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "chormix", chorusMixSlider);
+    lfoRateAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lforate", lfoRateSlider);
+    lfoDepthAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "lfodepth", lfoDepthSlider);
+    centerDelayAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "centerdelay", centerDelaySlider);
+    chorusFeedbackAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "chorfeedback", chorusFeedbackSlider);
+    chorusMixAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "chormix", chorusMixSlider);
 
     // Reverb
     setupLabel(reverbLabel, "Reverb");
@@ -195,12 +195,12 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     setupLabel(reverbDryLabel, "Reverb Dry");
     setupLabel(freezeModeLabel, "Freeze Mode");
 
-    roomSizeAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "roomSize", roomSizeSlider);
-    dampingAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "damping", dampingSlider);
-    reverbWidthAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "width", reverbWidthSlider);
-    reverbWetAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "wet", reverbWetSlider);
-    reverbDryAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "dry", reverbDrySlider);
-    freezeModeAttach = std::make_unique<SliderAttachment>(audioProcessor.apvts, "freezeMode", freezeModeSlider);
+    roomSizeAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "roomSize", roomSizeSlider);
+    dampingAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "damping", dampingSlider);
+    reverbWidthAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "width", reverbWidthSlider);
+    reverbWetAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "wet", reverbWetSlider);
+    reverbDryAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "dry", reverbDrySlider);
+    freezeModeAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "freezeMode", freezeModeSlider);
 
     inspector = std::make_unique<melatonin::Inspector>(content);
     addAndMakeVisible(*inspector);
