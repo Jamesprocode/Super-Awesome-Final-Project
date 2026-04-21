@@ -33,6 +33,8 @@ set(SourceFiles
         Source/PluginEditor.h
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
+        Source/MacroController.cpp
+        Source/MacroController.h
 )
 
 Include (FetchContent)
