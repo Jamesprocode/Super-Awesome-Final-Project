@@ -86,6 +86,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     };
 
     setupLabel(eqLabel, "EQ");
+    detailContent.addAndMakeVisible(eqBypassButton);
+    eqBypassAttach = std::make_unique<ButtonAttachment>(*audioProcessor.apvts, "eqBypass", eqBypassButton);
 
     // Low band
     setupKnob(lowFreqSlider);
@@ -137,6 +139,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
 
     // Compressor
     setupLabel(compLabel, "Compressor");
+    detailContent.addAndMakeVisible(compBypassButton);
+    compBypassAttach = std::make_unique<ButtonAttachment>(*audioProcessor.apvts, "compBypass", compBypassButton);
     setupKnob(thresholdSlider);
     setupKnob(ratioSlider);
     setupKnob(attackSlider);
@@ -153,6 +157,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
 
     // Saturator
     setupLabel(saturateLabel, "Saturation");
+    detailContent.addAndMakeVisible(satBypassButton);
+    satBypassAttach = std::make_unique<ButtonAttachment>(*audioProcessor.apvts, "satBypass", satBypassButton);
     setupKnob(preGainSlider);
     setupKnob(postGainSlider);
     setupLabel(preGainLabel, "Pre-Gain");
@@ -163,6 +169,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
 
     // Chorus
     setupLabel(chorusLabel, "Chorus");
+    detailContent.addAndMakeVisible(chorusBypassButton);
+    chorusBypassAttach = std::make_unique<ButtonAttachment>(*audioProcessor.apvts, "chorusBypass", chorusBypassButton);
     setupKnob(lfoRateSlider);
     setupKnob(lfoDepthSlider);
     setupKnob(centerDelaySlider);
@@ -182,6 +190,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
 
     // Reverb
     setupLabel(reverbLabel, "Reverb");
+    detailContent.addAndMakeVisible(reverbBypassButton);
+    reverbBypassAttach = std::make_unique<ButtonAttachment>(*audioProcessor.apvts, "reverbBypass", reverbBypassButton);
     setupKnob(roomSizeSlider);
     setupKnob(dampingSlider);
     setupKnob(reverbWidthSlider);
@@ -294,7 +304,11 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
     // 1. EQ Section
     auto eqArea = fullArea.removeFromTop(sectionHeight);
-    eqLabel.setBounds(eqArea.removeFromTop(labelHeight));
+    {
+        auto hdr = eqArea.removeFromTop(labelHeight);
+        eqBypassButton.setBounds(hdr.removeFromRight(90));
+        eqLabel.setBounds(hdr);
+    }
     auto colWidth = eqArea.getWidth() / 4;
     layoutColumn(lowFreqSlider, lowFreqLabel, lowGainSlider, lowGainLabel, lowQSlider, lowQLabel, eqArea.removeFromLeft(colWidth));
     layoutColumn(lowMidFreqSlider, lowMidFreqLabel, lowMidGainSlider, lowMidGainLabel, lowMidQSlider, lowMidQLabel, eqArea.removeFromLeft(colWidth));
@@ -303,7 +317,11 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
     // 2. Compressor Section
     auto compArea = fullArea.removeFromTop(150);
-    compLabel.setBounds(compArea.removeFromTop(labelHeight));
+    {
+        auto hdr = compArea.removeFromTop(labelHeight);
+        compBypassButton.setBounds(hdr.removeFromRight(90));
+        compLabel.setBounds(hdr);
+    }
     int cx = compArea.getX();
     int cy = compArea.getY();
     thresholdSlider.setBounds(cx, cy, knobSize, knobSize);
@@ -320,7 +338,11 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
     // 3. Saturator Section
     auto satArea = fullArea.removeFromTop(150);
-    saturateLabel.setBounds(satArea.removeFromTop(labelHeight));
+    {
+        auto hdr = satArea.removeFromTop(labelHeight);
+        satBypassButton.setBounds(hdr.removeFromRight(90));
+        saturateLabel.setBounds(hdr);
+    }
     int sx = satArea.getX();
     int sy = satArea.getY();
     preGainSlider.setBounds(sx, sy, knobSize, knobSize);
@@ -331,7 +353,11 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
     // 4. Chorus Section
     auto chorArea = fullArea.removeFromTop(150);
-    chorusLabel.setBounds(chorArea.removeFromTop(labelHeight));
+    {
+        auto hdr = chorArea.removeFromTop(labelHeight);
+        chorusBypassButton.setBounds(hdr.removeFromRight(90));
+        chorusLabel.setBounds(hdr);
+    }
     int chx = chorArea.getX();
     int chy = chorArea.getY();
     lfoRateSlider.setBounds(chx, chy, knobSize, knobSize);
@@ -351,7 +377,11 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
     // Reverb Section
     auto revArea = fullArea.removeFromTop(150);
-    reverbLabel.setBounds(revArea.removeFromTop(labelHeight));
+    {
+        auto hdr = revArea.removeFromTop(labelHeight);
+        reverbBypassButton.setBounds(hdr.removeFromRight(90));
+        reverbLabel.setBounds(hdr);
+    }
     int rvx = revArea.getX();
     int rvy = revArea.getY();
     roomSizeSlider.setBounds(rvx, rvy, knobSize, knobSize);

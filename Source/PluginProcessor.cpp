@@ -25,6 +25,18 @@ SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
     apvts = std::make_unique<juce::AudioProcessorValueTreeState>(
         *this, nullptr, "Parameters", createParameterLayout()
     );
+
+    macroController = std::make_unique<MacroController>(*apvts, "macro");
+
+    // Default macro mapping: a "Clean -> Aggressive" vocal preset.
+    // Replace / extend via macroController->setMappings(...) from the UI.
+    macroController->setMappings({
+        { "threshold",   0.0f,  -24.0f, 1.0f },
+        { "ratio",       1.0f,    6.0f, 1.0f },
+        { "preGain",     1.0f,    3.0f, 1.0f },
+        { "highMidGain", 0.0f,    4.0f, 1.0f },
+        { "wet",         0.1f,    0.4f, 1.0f },
+    });
 }
 
 SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
@@ -217,18 +229,25 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     // juce::dsp::AudioBlock<float> block (buffer);
     // juce::dsp::ProcessContextReplacing<float> context (block);
     //process eq
-    lowShelfFilter.process(context);
-    lowMidPeakFilter.process(context);
-    highMidPeakFilter.process(context);
-    highShelfFilter.process(context);
+    if (! *apvts->getRawParameterValue("eqBypass"))
+    {
+        lowShelfFilter.process(context);
+        lowMidPeakFilter.process(context);
+        highMidPeakFilter.process(context);
+        highShelfFilter.process(context);
+    }
     //process saturator
-    saturator.process(context);
+    if (! *apvts->getRawParameterValue("satBypass"))
+        saturator.process(context);
     //process reverb
-    reverb.process(context);
+    if (! *apvts->getRawParameterValue("reverbBypass"))
+        reverb.process(context);
     //process chorus
-    chorus.process(context);
+    if (! *apvts->getRawParameterValue("chorusBypass"))
+        chorus.process(context);
     //process compressor
-    comp.process(context);
+    if (! *apvts->getRawParameterValue("compBypass"))
+        comp.process(context);
 }
 
 
@@ -307,6 +326,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 1.0f, 0.5f));
 
+    // Macro knob (0..1), drives mapped parameters via MacroController.
+    layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
+
+    // Bypass switches for each module
+    layout.add(std::make_unique<juce::AudioParameterBool>("eqBypass",      "EQ Bypass",      false));
+    layout.add(std::make_unique<juce::AudioParameterBool>("compBypass",    "Comp Bypass",    false));
+    layout.add(std::make_unique<juce::AudioParameterBool>("reverbBypass",  "Reverb Bypass",  false));
+    layout.add(std::make_unique<juce::AudioParameterBool>("chorusBypass",  "Chorus Bypass",  false));
+    layout.add(std::make_unique<juce::AudioParameterBool>("satBypass",     "Sat Bypass",     false));
 
     return layout;
 }

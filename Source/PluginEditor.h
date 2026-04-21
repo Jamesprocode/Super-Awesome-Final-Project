@@ -29,6 +29,7 @@ private:
     SuperAwesomeVocalChainAudioProcessor& audioProcessor;
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 
     // All your UI lives inside this content component
     juce::Component content;
@@ -96,6 +97,19 @@ private:
     juce::Label reverbLabel;
     juce::Label roomSizeLabel, dampingLabel, reverbWidthLabel, reverbWetLabel, reverbDryLabel, freezeModeLabel;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> roomSizeAttach, dampingAttach, reverbWidthAttach, reverbWetAttach, reverbDryAttach, freezeModeAttach;
+
+    // Bypass toggle buttons
+    juce::ToggleButton eqBypassButton     { "Bypass" };
+    juce::ToggleButton compBypassButton   { "Bypass" };
+    juce::ToggleButton satBypassButton    { "Bypass" };
+    juce::ToggleButton chorusBypassButton { "Bypass" };
+    juce::ToggleButton reverbBypassButton { "Bypass" };
+
+    std::unique_ptr<ButtonAttachment> eqBypassAttach;
+    std::unique_ptr<ButtonAttachment> compBypassAttach;
+    std::unique_ptr<ButtonAttachment> satBypassAttach;
+    std::unique_ptr<ButtonAttachment> chorusBypassAttach;
+    std::unique_ptr<ButtonAttachment> reverbBypassAttach;
 
     // Inspector inspects `content`, not the whole editor (and not itself)
     std::unique_ptr<melatonin::Inspector> inspector;
