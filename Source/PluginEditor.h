@@ -50,8 +50,27 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroKnobAttachment;
 
     // Mapping page components
-    juce::ComboBox paramListBox;
-    juce::ComboBox curveTypeBox;
+    struct ParamEntry { juce::String paramID; juce::String displayName; };
+
+    struct MappingBlock
+    {
+        juce::Label sectionLabel;
+        juce::ComboBox paramSelector;
+        juce::Slider minSlider, maxSlider;
+        juce::Label minLabel, maxLabel;
+        juce::ComboBox curveSelector;
+        juce::Label curveLabel;
+        juce::TextButton mapButton { "Map" };
+        juce::TextButton unmapButton { "Unmap" };
+        std::vector<ParamEntry> params;
+    };
+
+    juce::OwnedArray<MappingBlock> mappingBlocks;
+    void setupMappingBlock (int index, const juce::String& title, std::vector<ParamEntry> params);
+    void onParamSelected (int blockIndex);
+    void onMapClicked (int blockIndex);
+    void onUnmapClicked (int blockIndex);
+    void refreshMappingHighlights();
 
     // Detailed page components
     juce::Viewport detailViewport;

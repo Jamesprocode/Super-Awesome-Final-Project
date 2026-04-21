@@ -40,29 +40,48 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     macroKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
             *audioProcessor.apvts, "macro", macroKnob);
 
-    // PAGE 2: mapping page
-    paramListBox.addItem("Low Frequency", 1);
-    paramListBox.addItem("Low Gain", 2);
-    paramListBox.addItem("Low Q", 3);
-    paramListBox.addItem("Low-Mid Frequency", 4);
-    paramListBox.addItem("Low-Mid Gain", 5);
-    paramListBox.addItem("Low-Mid Q", 6);
-    paramListBox.addItem("High-Mid Frequency", 7);
-    paramListBox.addItem("High-Mid Gain", 8);
-    paramListBox.addItem("High-Mid Q", 9);
-    paramListBox.addItem("High Frequency", 10);
-    paramListBox.addItem("High Gain", 11);
-    paramListBox.addItem("High Q", 12);
+    // PAGE 2: mapping page (old single-dropdown version)
+    // paramListBox.addItem("Low Frequency", 1);
+    // paramListBox.addItem("Low Gain", 2);
+    // paramListBox.addItem("Low Q", 3);
+    // paramListBox.addItem("Low-Mid Frequency", 4);
+    // paramListBox.addItem("Low-Mid Gain", 5);
+    // paramListBox.addItem("Low-Mid Q", 6);
+    // paramListBox.addItem("High-Mid Frequency", 7);
+    // paramListBox.addItem("High-Mid Gain", 8);
+    // paramListBox.addItem("High-Mid Q", 9);
+    // paramListBox.addItem("High Frequency", 10);
+    // paramListBox.addItem("High Gain", 11);
+    // paramListBox.addItem("High Q", 12);
+    // paramListBox.setSelectedId(1, juce::dontSendNotification);
+    // mapPage.addAndMakeVisible(paramListBox);
+    // curveTypeBox.addItem("Linear", 1);
+    // curveTypeBox.addItem("Logarithmic", 2);
+    // curveTypeBox.setSelectedId(1, juce::dontSendNotification);
+    // mapPage.addAndMakeVisible(curveTypeBox);
 
-    paramListBox.setSelectedId(1, juce::dontSendNotification);
-    mapPage.addAndMakeVisible(paramListBox);
-
-    curveTypeBox.addItem("Linear", 1);
-    curveTypeBox.addItem("Logarithmic", 2);
-
-    curveTypeBox.setSelectedId(1, juce::dontSendNotification);
-
-    mapPage.addAndMakeVisible(curveTypeBox);
+    // New: 5 blocks, one per DSP section
+    setupMappingBlock(0, "EQ", {
+        {"lowFreq","Low Freq"}, {"lowGain","Low Gain"}, {"lowQ","Low Q"},
+        {"lowMidFreq","LM Freq"}, {"lowMidGain","LM Gain"}, {"lowMidQ","LM Q"},
+        {"highMidFreq","HM Freq"}, {"highMidGain","HM Gain"}, {"highMidQ","HM Q"},
+        {"highFreq","High Freq"}, {"highGain","High Gain"}, {"highQ","High Q"}
+    });
+    setupMappingBlock(1, "Compressor", {
+        {"threshold","Threshold"}, {"ratio","Ratio"}, {"attack","Attack"}, {"release","Release"}
+    });
+    setupMappingBlock(2, "Saturator", {
+        {"preGain","Pre-Gain"}, {"postGain","Post-Gain"}
+    });
+    setupMappingBlock(3, "Chorus", {
+        {"lforate","LFO Rate"}, {"lfodepth","LFO Depth"}, {"centerdelay","Center Delay"},
+        {"chorfeedback","Feedback"}, {"chormix","Mix"}
+    });
+    setupMappingBlock(4, "Reverb", {
+        {"roomSize","Room Size"}, {"damping","Damping"}, {"width","Width"},
+        {"wet","Wet"}, {"dry","Dry"}, {"freeze","Freeze"}
+    });
+    refreshMappingHighlights();
 
     // PAGE 3: detailed page
     detailPage.addAndMakeVisible(detailViewport);
@@ -215,6 +234,7 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     inspector = std::make_unique<melatonin::Inspector>(content);
     addAndMakeVisible(*inspector);
 
+    resized();
     startTimer(50);
 }
 
@@ -259,24 +279,36 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
     macroKnob.setBounds(juce::Rectangle<int>(mKnobSize, mKnobSize).withCentre(macroPageArea.getCentre()));
 
     // --- Mapping Layout ---
-    auto mapArea = mapPage.getLocalBounds().reduced(40);
+    auto mapArea = mapPage.getLocalBounds().reduced(10);
+    const int rowH = 26;
+    const int pad = 4;
 
-    const int comboHeight = 30;
-    const int comboWidth  = 200;
+    for (auto* block : mappingBlocks)
+    {
+        // Row 1: section label + param dropdown
+        auto row1 = mapArea.removeFromTop(rowH);
+        block->sectionLabel.setBounds(row1.removeFromLeft(100));
+        block->paramSelector.setBounds(row1.removeFromLeft(150));
+        row1.removeFromLeft(pad);
+        block->mapButton.setBounds(row1.removeFromLeft(45));
+        row1.removeFromLeft(pad);
+        block->unmapButton.setBounds(row1.removeFromLeft(60));
 
-    paramListBox.setBounds(
-        mapArea.getX(),
-        mapArea.getY(),
-        comboWidth,
-        comboHeight
-    );
+        mapArea.removeFromTop(2);
 
-    curveTypeBox.setBounds(
-        mapArea.getRight() - comboWidth,
-        mapArea.getY(),
-        comboWidth,
-        comboHeight
-    );
+        // Row 2: min, max, curve
+        auto row2 = mapArea.removeFromTop(rowH);
+        block->minLabel.setBounds(row2.removeFromLeft(30));
+        block->minSlider.setBounds(row2.removeFromLeft(130));
+        row2.removeFromLeft(pad);
+        block->maxLabel.setBounds(row2.removeFromLeft(32));
+        block->maxSlider.setBounds(row2.removeFromLeft(130));
+        row2.removeFromLeft(pad);
+        block->curveLabel.setBounds(row2.removeFromLeft(40));
+        block->curveSelector.setBounds(row2.removeFromLeft(100));
+
+        mapArea.removeFromTop(pad + 4);
+    }
 
     // --- Detailed Layout ---
     const int sectionHeight = 320;
@@ -417,3 +449,178 @@ void SuperAwesomeVocalChainAudioProcessorEditor::timerCallback()
 }
 
 void SuperAwesomeVocalChainAudioProcessorEditor::updateVisibility() {}
+
+void SuperAwesomeVocalChainAudioProcessorEditor::setupMappingBlock (
+    int index, const juce::String& title, std::vector<ParamEntry> params)
+{
+    auto* block = mappingBlocks.add (new MappingBlock());
+    block->params = std::move (params);
+
+    block->sectionLabel.setText (title, juce::dontSendNotification);
+    block->sectionLabel.setFont (juce::Font (16.0f).boldened());
+    block->sectionLabel.setColour (juce::Label::textColourId, juce::Colours::white);
+    mapPage.addAndMakeVisible (block->sectionLabel);
+
+    for (int i = 0; i < (int) block->params.size(); ++i)
+        block->paramSelector.addItem (block->params[i].displayName, i + 1);
+    block->paramSelector.setSelectedId (1, juce::dontSendNotification);
+    block->paramSelector.onChange = [this, index] { onParamSelected (index); };
+    mapPage.addAndMakeVisible (block->paramSelector);
+
+    block->minLabel.setText ("Min:", juce::dontSendNotification);
+    block->minLabel.setColour (juce::Label::textColourId, juce::Colours::white);
+    mapPage.addAndMakeVisible (block->minLabel);
+
+    block->maxLabel.setText ("Max:", juce::dontSendNotification);
+    block->maxLabel.setColour (juce::Label::textColourId, juce::Colours::white);
+    mapPage.addAndMakeVisible (block->maxLabel);
+
+    block->curveLabel.setText ("Curve:", juce::dontSendNotification);
+    block->curveLabel.setColour (juce::Label::textColourId, juce::Colours::white);
+    mapPage.addAndMakeVisible (block->curveLabel);
+
+    // Set min/max slider ranges from the selected param
+    block->minSlider.setSliderStyle (juce::Slider::LinearHorizontal);
+    block->minSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 50, 24);
+    mapPage.addAndMakeVisible (block->minSlider);
+
+    block->maxSlider.setSliderStyle (juce::Slider::LinearHorizontal);
+    block->maxSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 50, 24);
+    mapPage.addAndMakeVisible (block->maxSlider);
+
+    block->curveSelector.addItem ("Linear", 1);
+    block->curveSelector.addItem ("Logarithmic", 2);
+    block->curveSelector.addItem ("Exponential", 3);
+    block->curveSelector.setSelectedId (1, juce::dontSendNotification);
+    mapPage.addAndMakeVisible (block->curveSelector);
+
+    block->mapButton.onClick = [this, index] { onMapClicked (index); };
+    mapPage.addAndMakeVisible (block->mapButton);
+
+    block->unmapButton.onClick = [this, index] { onUnmapClicked (index); };
+    mapPage.addAndMakeVisible (block->unmapButton);
+
+    // Initialize slider ranges from the first param
+    onParamSelected (index);
+}
+
+void SuperAwesomeVocalChainAudioProcessorEditor::onParamSelected (int blockIndex)
+{
+    auto* block = mappingBlocks[blockIndex];
+    int sel = block->paramSelector.getSelectedId() - 1;
+    if (sel < 0 || sel >= (int) block->params.size()) return;
+
+    auto& paramID = block->params[sel].paramID;
+    auto range = audioProcessor.apvts->getParameterRange (paramID);
+
+    block->minSlider.setRange (range.start, range.end, 0.01);
+    block->maxSlider.setRange (range.start, range.end, 0.01);
+
+    // If this param is already mapped, load its mapping values
+    if (audioProcessor.macroController)
+    {
+        for (auto& m : audioProcessor.macroController->getMappings())
+        {
+            if (m.targetParamID == paramID)
+            {
+                block->minSlider.setValue (m.minValue, juce::dontSendNotification);
+                block->maxSlider.setValue (m.maxValue, juce::dontSendNotification);
+                float curve = m.curve;
+                if (curve <= 1.0f)      block->curveSelector.setSelectedId (1, juce::dontSendNotification);
+                else if (curve <= 1.5f) block->curveSelector.setSelectedId (2, juce::dontSendNotification);
+                else                    block->curveSelector.setSelectedId (3, juce::dontSendNotification);
+                return;
+            }
+        }
+    }
+
+    // Not mapped — set defaults to param range endpoints
+    block->minSlider.setValue (range.start, juce::dontSendNotification);
+    block->maxSlider.setValue (range.end, juce::dontSendNotification);
+}
+
+void SuperAwesomeVocalChainAudioProcessorEditor::onMapClicked (int blockIndex)
+{
+    auto* block = mappingBlocks[blockIndex];
+    int sel = block->paramSelector.getSelectedId() - 1;
+    if (sel < 0 || sel >= (int) block->params.size()) return;
+
+    float curve = 1.0f;
+    int curveId = block->curveSelector.getSelectedId();
+    if (curveId == 2) curve = 0.5f;  // logarithmic (sqrt shape)
+    if (curveId == 3) curve = 2.0f;  // exponential
+
+    MacroMapping newMapping;
+    newMapping.targetParamID = block->params[sel].paramID;
+    newMapping.minValue = (float) block->minSlider.getValue();
+    newMapping.maxValue = (float) block->maxSlider.getValue();
+    newMapping.curve = curve;
+
+    if (audioProcessor.macroController)
+    {
+        // Get existing mappings, replace if same param, otherwise append
+        auto mappings = audioProcessor.macroController->getMappings();
+        bool found = false;
+        for (auto& m : mappings)
+        {
+            if (m.targetParamID == newMapping.targetParamID)
+            {
+                m = newMapping;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            mappings.push_back (newMapping);
+
+        audioProcessor.macroController->setMappings (std::move (mappings));
+    }
+
+    refreshMappingHighlights();
+}
+
+void SuperAwesomeVocalChainAudioProcessorEditor::onUnmapClicked (int blockIndex)
+{
+    auto* block = mappingBlocks[blockIndex];
+    int sel = block->paramSelector.getSelectedId() - 1;
+    if (sel < 0 || sel >= (int) block->params.size()) return;
+
+    auto paramID = block->params[sel].paramID;
+
+    if (audioProcessor.macroController)
+    {
+        auto mappings = audioProcessor.macroController->getMappings();
+        mappings.erase (
+            std::remove_if (mappings.begin(), mappings.end(),
+                [&](const MacroMapping& m) { return m.targetParamID == paramID; }),
+            mappings.end());
+        audioProcessor.macroController->setMappings (std::move (mappings));
+    }
+
+    refreshMappingHighlights();
+}
+
+void SuperAwesomeVocalChainAudioProcessorEditor::refreshMappingHighlights()
+{
+    // Collect currently mapped param IDs
+    std::set<juce::String> mappedIDs;
+    if (audioProcessor.macroController)
+        for (auto& m : audioProcessor.macroController->getMappings())
+            mappedIDs.insert (m.targetParamID);
+
+    // Update each block's dropdown to show which params are mapped
+    for (auto* block : mappingBlocks)
+    {
+        block->paramSelector.clear (juce::dontSendNotification);
+        for (int i = 0; i < (int) block->params.size(); ++i)
+        {
+            auto name = block->params[i].displayName;
+            if (mappedIDs.count (block->params[i].paramID))
+                name += " *";
+            block->paramSelector.addItem (name, i + 1);
+        }
+        // Restore selection
+        if (block->paramSelector.getNumItems() > 0)
+            block->paramSelector.setSelectedId (1, juce::dontSendNotification);
+    }
+}
