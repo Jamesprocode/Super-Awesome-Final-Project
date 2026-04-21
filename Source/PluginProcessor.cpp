@@ -37,6 +37,13 @@ SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
         { "highMidGain", 0.0f,    4.0f, 1.0f },
         { "wet",         0.1f,    0.4f, 1.0f },
     });
+    listener = std::make_unique<ParameterListener>(
+        eqNeedsUpdate,
+        compNeedsUpdate,
+        satNeedsUpdate,
+        revNeedsUpdate,
+        chorNeedsUpdate
+    );
 }
 
 SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
@@ -191,39 +198,50 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
 
     auto sampleRate = getSampleRate();
 
-    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts->getRawParameterValue("lowFreq")->load(), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
-    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("lowMidFreq")->load(), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
-    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("highMidFreq")->load(), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
-    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts->getRawParameterValue("highFreq")->load(), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
+    if (eqNeedsUpdate.exchange(false)) {
+        *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts->getRawParameterValue("lowFreq")->load(), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
+        *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("lowMidFreq")->load(), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
+        *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("highMidFreq")->load(), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
+        *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts->getRawParameterValue("highFreq")->load(), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
+    }
+    
 
     // Update compressor parameters
-    comp.setThreshold(*apvts->getRawParameterValue("threshold"));
-    comp.setRatio(*apvts->getRawParameterValue("ratio"));
-    comp.setAttack(*apvts->getRawParameterValue("attack"));
-    comp.setRelease(*apvts->getRawParameterValue("release"));
+    if (compNeedsUpdate.exchange(false)) {
+        comp.setThreshold(*apvts->getRawParameterValue("threshold"));
+        comp.setRatio(*apvts->getRawParameterValue("ratio"));
+        comp.setAttack(*apvts->getRawParameterValue("attack"));
+        comp.setRelease(*apvts->getRawParameterValue("release"));
+    }
+    
 
 
     // Update reverb parameters
-    reverbParams.roomSize = *apvts->getRawParameterValue("roomSize");
-    reverbParams.damping = *apvts->getRawParameterValue("damping");
-    reverbParams.width = *apvts->getRawParameterValue("width");
-    reverbParams.wetLevel = *apvts->getRawParameterValue("wet");
-    reverbParams.dryLevel = *apvts->getRawParameterValue("dry");
-    reverbParams.freezeMode = *apvts->getRawParameterValue("freeze");
+    if (revNeedsUpdate.exchange(false)) {
+        reverbParams.roomSize = *apvts->getRawParameterValue("roomSize");
+        reverbParams.damping = *apvts->getRawParameterValue("damping");
+        reverbParams.width = *apvts->getRawParameterValue("width");
+        reverbParams.wetLevel = *apvts->getRawParameterValue("wet");
+        reverbParams.dryLevel = *apvts->getRawParameterValue("dry");
+        reverbParams.freezeMode = *apvts->getRawParameterValue("freeze");
 
-    reverb.setParameters(reverbParams);
-
+        reverb.setParameters(reverbParams);
+    }
 
     //Update chorus parameters
-    chorus.setRate(*apvts->getRawParameterValue("lforate"));
-    chorus.setDepth(*apvts->getRawParameterValue("lfodepth"));
-    chorus.setCentreDelay(*apvts->getRawParameterValue("centerdelay"));
-    chorus.setFeedback(*apvts->getRawParameterValue("chorfeedback"));
-    chorus.setMix(*apvts->getRawParameterValue("chormix"));
-
+    if (chorNeedsUpdate.exchange(false)) {
+        chorus.setRate(*apvts->getRawParameterValue("lforate"));
+        chorus.setDepth(*apvts->getRawParameterValue("lfodepth"));
+        chorus.setCentreDelay(*apvts->getRawParameterValue("centerdelay"));
+        chorus.setFeedback(*apvts->getRawParameterValue("chorfeedback"));
+        chorus.setMix(*apvts->getRawParameterValue("chormix"));
+    }
+    
     //Update saturator parameters
-    saturator.get<0>().setGainLinear(*apvts->getRawParameterValue("preGain"));
-    saturator.get<2>().setGainLinear(*apvts->getRawParameterValue("postGain"));
+    if (satNeedsUpdate.exchange(false)) {
+        saturator.get<0>().setGainLinear(*apvts->getRawParameterValue("preGain"));
+        saturator.get<2>().setGainLinear(*apvts->getRawParameterValue("postGain"));
+    }
 
     // Process the entire buffer at once (stereo)
     // juce::dsp::AudioBlock<float> block (buffer);
