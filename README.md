@@ -2,6 +2,13 @@
 
 **Author(s):** Angela Branchek, Rafael Collado, Binyue Deng, JD Harris, Jiayi Wang
 
+## NEW USER BUILD SETUP:
+`cmake -S . -B build`
+`cmake --build build --config Debug`
+`open "build/SAFProject_artefacts/Debug/Standalone/Super Awesome Vocal Chain.app"`
+Then, rescan plugins in your DAW to use Super Awesome Vocal Chain!
+
+
 ## README
 ## 1. Summary
 The production process of writing music in a DAW can be overwhelming and sometimes frustrating when you have so many options and settings that can be tweaked. Some producers have preferred plugin chains that they have assembled from years of experience, but even with that comes the need for slight adjustments depending on the nature of the audio source, which can waste time during a session. Other producers that are less experienced might struggle with figuring out where to start when several plugins with even more parameters to edit are given to them. If there was a way to reduce the headache of needing to dial in the perfect sound without limiting the user, both beginner and experienced music producers would benefit.
