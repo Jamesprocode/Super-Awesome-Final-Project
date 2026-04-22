@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.24)
 
+# Set the minimum supported macOS version to 26.1 for broader compatibility
+# (including Rafael's MacBook lol)
+if(CMAKE_HOST_APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "26.1" CACHE STRING "Minimum supported macOS version" FORCE)
+endif()
+
 # Change to your project name
 project(SAFProject VERSION 0.0.1)
 
