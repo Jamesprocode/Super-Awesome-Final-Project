@@ -8,3 +8,6 @@
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+# build directory
+/build/
+.DS_Store
