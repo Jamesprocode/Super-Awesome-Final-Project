@@ -1,10 +1,105 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <cstddef>
+#include <cstring>
+#include <vector>
+
+namespace
+{
+
+juce::File getUiPublicFolder()
+{
+    return juce::File{ __FILE__ }
+        .getParentDirectory()
+        .getParentDirectory()
+        .getChildFile ("plugin")
+        .getChildFile ("ui")
+        .getChildFile ("public");
+}
+
+juce::String getMimeTypeForExtension (const juce::String& extLowerNoDot)
+{
+    if (extLowerNoDot == "htm")   return "text/html";
+    if (extLowerNoDot == "html")  return "text/html";
+    if (extLowerNoDot == "txt")   return "text/plain";
+    if (extLowerNoDot == "css")   return "text/css";
+    if (extLowerNoDot == "js")    return "text/javascript";
+    if (extLowerNoDot == "json")  return "application/json";
+    if (extLowerNoDot == "png")   return "image/png";
+    if (extLowerNoDot == "jpg")  return "image/jpeg";
+    if (extLowerNoDot == "jpeg")  return "image/jpeg";
+    if (extLowerNoDot == "svg")  return "image/svg+xml";
+    if (extLowerNoDot == "ico")  return "image/vnd.microsoft.icon";
+    if (extLowerNoDot == "woff2")  return "font/woff2";
+
+    return "application/octet-stream";
+}
+
+std::vector<std::byte> loadFileToByteVector (const juce::File& file)
+{
+    juce::MemoryBlock block;
+    if (! file.loadFileAsData (block))
+        return {};
+
+    std::vector<std::byte> v ((size_t) block.getSize());
+    if (block.getSize() > 0)
+        std::memcpy (v.data(), block.getData(), (size_t) block.getSize());
+
+    return v;
+}
+
+} // namespace
+
+juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::createWebViewOptions (SuperAwesomeVocalChainAudioProcessorEditor& self)
+{
+    juce::WebBrowserComponent::Options o = juce::WebBrowserComponent::Options()
+        .withResourceProvider (
+            [&self] (const juce::String& url) { return self.getResource (url); });
+
+   #if JUCE_WINDOWS
+    o = o.withWinWebView2Options (
+        juce::WebBrowserComponent::Options::WinWebView2()
+            .withBackgroundColour (juce::Colours::white));
+   #endif
+
+    return o;
+}
+
+std::optional<SuperAwesomeVocalChainAudioProcessorEditor::Resource> SuperAwesomeVocalChainAudioProcessorEditor::getResource (const juce::String& url)
+{
+   #if JUCE_WEB_BROWSER_RESOURCE_PROVIDER_AVAILABLE
+    const juce::String rel = url == "/" || url.isEmpty()
+        ? "index.html"
+        : juce::String{ url.fromFirstOccurrenceOf ("/", false, false) };
+
+    if (rel.contains ("/../") || rel.startsWith ("..") || juce::File::isAbsolutePath (rel))
+        return std::nullopt;
+
+    const auto publicDir = getUiPublicFolder();
+    const juce::File file = publicDir.getChildFile (rel);
+
+    if (! file.isAChildOf (publicDir) || ! file.existsAsFile())
+        return std::nullopt;
+
+    juce::String ext = file.getFileExtension().toLowerCase();
+    if (ext.isNotEmpty() && ext[0] == '.')
+        ext = ext.fromFirstOccurrenceOf (".", false, false);
+
+    auto bytes = loadFileToByteVector (file);
+    if (file.getSize() > 0 && bytes.empty())
+        return std::nullopt;
+
+    return Resource { std::move (bytes), getMimeTypeForExtension (ext) };
+   #else
+    juce::ignoreUnused (url);
+    return std::nullopt;
+   #endif
+}
 
 //==============================================================================
 SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessorEditor
     (SuperAwesomeVocalChainAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), audioProcessor (p), webView (createWebViewOptions (*this))
 {
     setSize (1000, 600);
 
@@ -234,6 +329,10 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     inspector = std::make_unique<melatonin::Inspector>(content);
     addAndMakeVisible(*inspector);
 
+    macroPage.addAndMakeVisible (webView);
+    webView.toBack();
+    webView.goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+
     resized();
     startTimer(50);
 }
@@ -274,8 +373,9 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
     detailViewport.setBounds(detailPage.getLocalBounds());
 
     // --- Macro Layout ---
+    webView.setBounds (macroPage.getLocalBounds());
     auto macroPageArea = macroPage.getLocalBounds().reduced(40);
-    int mKnobSize = juce::jmin(macroPageArea.getWidth(), macroPageArea.getHeight()) * 0.6;
+    const int mKnobSize = static_cast<int> (juce::jmin (macroPageArea.getWidth(), macroPageArea.getHeight()) * 0.6);
     macroKnob.setBounds(juce::Rectangle<int>(mKnobSize, mKnobSize).withCentre(macroPageArea.getCentre()));
 
     // --- Mapping Layout ---

@@ -8,10 +8,12 @@
 
 #pragma once
 
+#include <optional>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "melatonin_inspector/melatonin_inspector.h"
 #include "PluginProcessor.h"
+#include <juce_gui_extra/juce_gui_extra.h>
 
 //==============================================================================
 class SuperAwesomeVocalChainAudioProcessorEditor
@@ -132,6 +134,13 @@ private:
 
     // Inspector inspects `content`, not the whole editor (and not itself)
     std::unique_ptr<melatonin::Inspector> inspector;
+
+    using Resource = juce::WebBrowserComponent::Resource;
+    static juce::WebBrowserComponent::Options createWebViewOptions (SuperAwesomeVocalChainAudioProcessorEditor&);
+    std::optional<Resource> getResource (const juce::String& url);
+
+    // WebView component (Options/resource provider are set in the constructor)
+    juce::WebBrowserComponent webView;
 
     void updateVisibility();
     void timerCallback() override;
