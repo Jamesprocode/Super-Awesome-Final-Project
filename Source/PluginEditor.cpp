@@ -326,8 +326,8 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     reverbDryAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "dry", reverbDrySlider);
     freezeModeAttach = std::make_unique<SliderAttachment>(*audioProcessor.apvts, "freeze", freezeModeSlider);
 
-    inspector = std::make_unique<melatonin::Inspector>(content);
-    addAndMakeVisible(*inspector);
+    // inspector = std::make_unique<melatonin::Inspector>(content);
+    // addAndMakeVisible(*inspector);
 
     macroPage.addAndMakeVisible (webView);
     webView.toBack();
