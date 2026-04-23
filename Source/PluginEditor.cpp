@@ -53,8 +53,10 @@ std::vector<std::byte> loadFileToByteVector (const juce::File& file)
 juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::createWebViewOptions (SuperAwesomeVocalChainAudioProcessorEditor& self)
 {
     juce::WebBrowserComponent::Options o = juce::WebBrowserComponent::Options()
+        .withNativeIntegrationEnabled (true)
         .withResourceProvider (
-            [&self] (const juce::String& url) { return self.getResource (url); });
+            [&self] (const juce::String& url) { return self.getResource (url); })
+        .withOptionsFrom (self.macroSliderRelay);
 
    #if JUCE_WINDOWS
     o = o.withWinWebView2Options (
@@ -124,16 +126,7 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     // Start on macro page
     showPage(0);
 
-    // PAGE 1: macro page
-    macroKnob.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    macroKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 30);
-    macroKnob.setRange(0.0, 1.0, 0.001);
-    macroKnob.setDoubleClickReturnValue(true, 0.5);
-
-    macroPage.addAndMakeVisible(macroKnob);
-
-    macroKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-            *audioProcessor.apvts, "macro", macroKnob);
+    // PAGE 1: macro control is implemented in the WebView (React) — see WebSliderParameterAttachment
 
     // PAGE 2: mapping page (old single-dropdown version)
     // paramListBox.addItem("Low Frequency", 1);
@@ -330,8 +323,13 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     // addAndMakeVisible(*inspector);
 
     macroPage.addAndMakeVisible (webView);
-    webView.toBack();
     webView.goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+
+    if (auto* macroParam = audioProcessor.apvts->getParameter ("macro"))
+    {
+        macroWebAttachment = std::make_unique<juce::WebSliderParameterAttachment> (
+            *macroParam, macroSliderRelay, audioProcessor.apvts->undoManager);
+    }
 
     resized();
     startTimer(50);
@@ -372,11 +370,8 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
     detailPage.setBounds(contentBounds);
     detailViewport.setBounds(detailPage.getLocalBounds());
 
-    // --- Macro Layout ---
+    // --- Macro page: full-area WebView (React macro knob)
     webView.setBounds (macroPage.getLocalBounds());
-    auto macroPageArea = macroPage.getLocalBounds().reduced(40);
-    const int mKnobSize = static_cast<int> (juce::jmin (macroPageArea.getWidth(), macroPageArea.getHeight()) * 0.6);
-    macroKnob.setBounds(juce::Rectangle<int>(mKnobSize, mKnobSize).withCentre(macroPageArea.getCentre()));
 
     // --- Mapping Layout ---
     auto mapArea = mapPage.getLocalBounds().reduced(10);

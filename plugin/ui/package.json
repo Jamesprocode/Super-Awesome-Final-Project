@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "juce-framework-frontend-mirror": "^8.0.10",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },

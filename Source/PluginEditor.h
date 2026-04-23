@@ -47,10 +47,6 @@ private:
 
     void showPage(int index);
 
-    // Macro page components
-    juce::Slider macroKnob;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroKnobAttachment;
-
     // Mapping page components
     struct ParamEntry { juce::String paramID; juce::String displayName; };
 
@@ -139,8 +135,12 @@ private:
     static juce::WebBrowserComponent::Options createWebViewOptions (SuperAwesomeVocalChainAudioProcessorEditor&);
     std::optional<Resource> getResource (const juce::String& url);
 
+    juce::WebSliderRelay macroSliderRelay { "macro" };
+
     // WebView component (Options/resource provider are set in the constructor)
     juce::WebBrowserComponent webView;
+
+    std::unique_ptr<juce::WebSliderParameterAttachment> macroWebAttachment;
 
     void updateVisibility();
     void timerCallback() override;

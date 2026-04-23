@@ -1,0 +1,79 @@
+.macro-knob-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 2rem 1.5rem 4rem;
+  text-align: center;
+}
+
+.macro-knob-title {
+  margin: 0 0 0.25rem;
+  font-size: clamp(1.5rem, 3vw, 1.85rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #f1f5f9;
+}
+
+.macro-knob-hint {
+  margin: 0 0 1.75rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.macro-knob {
+  position: relative;
+  width: min(18rem, 80vw);
+  max-width: 22rem;
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+  border-radius: 1.5rem;
+  padding: 0.5rem;
+}
+
+.macro-knob:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 6px;
+}
+
+.macro-knob-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.5rem;
+  background: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(99, 102, 241, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.macro-knob-dial {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
+  z-index: 1;
+}
+
+.macro-knob-rim {
+  stroke: #334155;
+  stroke-width: 3;
+}
+
+.macro-knob-readout {
+  position: relative;
+  margin-top: 0.75rem;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  letter-spacing: 0.12em;
+  z-index: 1;
+}
+
+.macro-knob-standalone {
+  margin-top: 1.5rem;
+  max-width: 20rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #fbbf24;
+}
