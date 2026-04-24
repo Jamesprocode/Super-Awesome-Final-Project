@@ -98,4 +98,5 @@ private:
     std::atomic<bool> chorNeedsUpdate{ true };
 
     std::unique_ptr<ParameterListener> listener;
+    std::atomic<bool> isPrepared{ false };
 };
