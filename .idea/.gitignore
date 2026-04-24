@@ -8,3 +8,4 @@
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+# Project /build/ is ignored by the repo-root .gitignore (patterns here only apply under .idea/).

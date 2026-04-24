@@ -1,0 +1,6 @@
+# CMake / local build outputs
+/build/
+/cmake-build-*/
+
+# macOS
+.DS_Store
