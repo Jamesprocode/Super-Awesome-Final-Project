@@ -414,10 +414,10 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
         <div className="safc-mapping-row__range-readout" aria-live="polite">
           <span className="safc-muted">Range:</span>{' '}
           <span className="safc-mapping-row__numbers">
-            {fmtMappingValue(sortedMin)} … {fmtMappingValue(sortedMax)}
+            {fmtMappingValue(sortedMin)} - {fmtMappingValue(sortedMax)}
           </span>
           <span className="safc-muted safc-mapping-row__bounds">
-            ({fmtMappingValue(bounds.lo)} – {fmtMappingValue(bounds.hi)} bounds)
+            (Minimum: {fmtMappingValue(bounds.lo)} | Maximum: {fmtMappingValue(bounds.hi)})
           </span>
         </div>
       </div>
