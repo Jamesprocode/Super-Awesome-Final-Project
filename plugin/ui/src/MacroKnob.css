@@ -1,0 +1,98 @@
+.macro-knob-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 1rem 1.25rem 2.5rem;
+  text-align: center;
+}
+
+/* Large gradient readout above the knob (value duplicates aria on the slider root) */
+.macro-knob-hero-percent {
+  margin: 0.5rem;
+  padding: 0.5rem;
+  font-size: 6rem;
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+
+  background: linear-gradient(
+    118deg,
+    #c4b5fd 0%,
+    #818cf8 22%,
+    #6366f1 45%,
+    #a78bfa 68%,
+    #e879f9 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  filter: drop-shadow(0 2px 14px rgba(99, 102, 241, 0.35));
+}
+
+/* Fallback when clip isn’t honored (keep readable) */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .macro-knob-hero-percent {
+    color: #a5b4fc;
+    background: none;
+    filter: none;
+  }
+}
+
+.macro-knob {
+  position: relative;
+  width: min(18rem, 80vw);
+  max-width: 22rem;
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+  border-radius: 1.5rem;
+  padding: 0.5rem;
+}
+
+.macro-knob:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 6px;
+}
+
+.macro-knob-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.5rem;
+  background: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(99, 102, 241, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.macro-knob-dial {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
+  z-index: 1;
+}
+
+.macro-knob-static-bezel {
+  pointer-events: none;
+}
+
+.macro-knob-track-bg {
+  stroke: #1e293b;
+  stroke-width: 5;
+  opacity: 0.85;
+}
+
+.macro-knob-track-fill {
+  stroke: #818cf8;
+  stroke-width: 5;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 4px rgba(129, 140, 248, 0.45));
+}
+
+.macro-knob-rim {
+  stroke: #475569;
+  stroke-width: 2.5;
+}

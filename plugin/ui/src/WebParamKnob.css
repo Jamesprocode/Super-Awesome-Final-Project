@@ -1,0 +1,40 @@
+.safc-web-knob-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.safc-web-knob {
+  width: 5.75rem;
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+  border-radius: 0.85rem;
+  padding: 0.35rem;
+}
+
+.safc-web-knob:focus-within .safc-web-knob-svg {
+  outline: none;
+}
+
+.safc-web-knob-rim {
+  stroke: #334155;
+  stroke-width: 2.25;
+}
+
+.safc-web-knob-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+}
+
+.safc-web-knob-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+  max-width: 6.5rem;
+  line-height: 1.2;
+}
