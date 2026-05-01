@@ -3,9 +3,11 @@
 **Author(s):** Angela Branchek, Rafael Collado, Binyue Deng, JD Harris, Jiayi Wang
 
 ## NEW USER BUILD SETUP:
+`npm install`
 `cmake -S . -B build`
 `cmake --build build --config Debug`
 `open "build/SAFProject_artefacts/Debug/Standalone/Super Awesome Vocal Chain.app"`
+
 Then, rescan plugins in your DAW to use Super Awesome Vocal Chain!
 
 
