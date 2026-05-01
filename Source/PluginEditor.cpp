@@ -89,20 +89,20 @@ void appendMappingBlocks (juce::Array<juce::var>& blocksOut, juce::AudioProcesso
     };
 
     addBlock ("EQ", {
-        {"lowFreq", "Low Freq"}, {"lowGain", "Low Gain"}, {"lowQ", "Low Q"},
-        {"lowMidFreq", "LM Freq"}, {"lowMidGain", "LM Gain"}, {"lowMidQ", "LM Q"},
-        {"highMidFreq", "HM Freq"}, {"highMidGain", "HM Gain"}, {"highMidQ", "HM Q"},
-        {"highFreq", "High Freq"}, {"highGain", "High Gain"}, {"highQ", "High Q"}});
+        {"lowFreq", "Low Freq (Hz)"}, {"lowGain", "Low Gain (dB)"}, {"lowQ", "Low Q"},
+        {"lowMidFreq", "Low-Mid Freq (Hz)"}, {"lowMidGain", "Low-Mid Gain (dB)"}, {"lowMidQ", "Low-Mid Q"},
+        {"highMidFreq", "High-Mid Freq (Hz)"}, {"highMidGain", "High-Mid Gain (dB)"}, {"highMidQ", "High-Mid Q"},
+        {"highFreq", "High Freq (Hz)"}, {"highGain", "High Gain (dB)"}, {"highQ", "High Q"}});
 
     addBlock ("Compressor", {
-        {"threshold", "Threshold"}, {"ratio", "Ratio"}, {"attack", "Attack"}, {"release", "Release"}});
+        {"threshold", "Threshold (dB)"}, {"ratio", "Ratio"}, {"attack", "Attack (ms)"}, {"release", "Release (ms)"}});
 
     addBlock ("Saturator", {
-        {"preGain", "Pre-Gain"}, {"postGain", "Post-Gain"}});
+        {"preGain", "Pre-Gain (dB)"}, {"postGain", "Post-Gain (dB)"}});
 
     addBlock ("Chorus", {
-        {"lforate", "LFO Rate"}, {"lfodepth", "LFO Depth"}, {"centerdelay", "Center Delay"},
-        {"chorfeedback", "Feedback"}, {"chormix", "Mix"}});
+        {"lforate", "LFO Rate (Hz)"}, {"lfodepth", "LFO Depth (%)"}, {"centerdelay", "Center Delay (ms)"},
+        {"chorfeedback", "Feedback (%)"}, {"chormix", "Mix (%)"}});
 
     addBlock ("Reverb", {
         {"roomSize", "Room Size"}, {"damping", "Damping"}, {"width", "Width"},

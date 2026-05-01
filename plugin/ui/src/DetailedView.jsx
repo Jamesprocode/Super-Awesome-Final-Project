@@ -7,67 +7,74 @@ import { CollapsibleSection } from './CollapsibleSection.jsx'
 export function DetailedView({ visible }) {
   if (!visible) return null
 
-  const header = (relayId, label = 'Bypass') => <BypassToggle relayId={relayId} label={label} />
+  const header = (relayId, label = 'Bypass') => (
+    <BypassToggle relayId={relayId} label={label} showLabel />
+  )
 
   return (
     <div className="safc-page">
       <div className="safc-muted" style={{ marginBottom: '0.85rem', textAlign: 'center' }}>
-        Drag knobs vertically · each effect folds open from the ▶ header (bypass stays visible in the header)
+        INSERT USEFUL DIRECTIONS HERE FOR NEW USERS
       </div>
 
       <CollapsibleSection title="EQ" headerRight={header('eqBypass')} defaultOpen={false}>
-        <div className="safc-detail-grid">
-          <WebParamKnob relayId="lowFreq" label="Low Freq" />
-          <WebParamKnob relayId="lowGain" label="Low Gain" />
+        {/* 3 rows × 4 cols: each column Low → LM → HM → High; rows Freq / Gain / Q */}
+        <div
+          className="safc-detail-eq-grid"
+          role="group"
+          aria-label="EQ bands: columns Low, Low-Mid, High-Mid, High; rows frequency, gain, Q"
+        >
+          <WebParamKnob relayId="lowFreq" label="Low Freq (Hz)" />
+          <WebParamKnob relayId="lowMidFreq" label="Low-Mid Freq (Hz)" />
+          <WebParamKnob relayId="highMidFreq" label="High-Mid Freq (Hz)" />
+          <WebParamKnob relayId="highFreq" label="High Freq (Hz)" />
+          <WebParamKnob relayId="lowGain" label="Low Gain (dB)" />
+          <WebParamKnob relayId="lowMidGain" label="Low-Mid Gain (dB)" />
+          <WebParamKnob relayId="highMidGain" label="High-Mid Gain (dB)" />
+          <WebParamKnob relayId="highGain" label="High Gain (dB)" />
           <WebParamKnob relayId="lowQ" label="Low Q" />
-          <WebParamKnob relayId="lowMidFreq" label="LM Freq" />
-          <WebParamKnob relayId="lowMidGain" label="LM Gain" />
-          <WebParamKnob relayId="lowMidQ" label="LM Q" />
-          <WebParamKnob relayId="highMidFreq" label="HM Freq" />
-          <WebParamKnob relayId="highMidGain" label="HM Gain" />
-          <WebParamKnob relayId="highMidQ" label="HM Q" />
-          <WebParamKnob relayId="highFreq" label="High Freq" />
-          <WebParamKnob relayId="highGain" label="High Gain" />
+          <WebParamKnob relayId="lowMidQ" label="Low-Mid Q" />
+          <WebParamKnob relayId="highMidQ" label="High-Mid Q" />
           <WebParamKnob relayId="highQ" label="High Q" />
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Compressor" headerRight={header('compBypass')} defaultOpen={false}>
-        <div className="safc-detail-grid">
-          <WebParamKnob relayId="threshold" label="Threshold" />
+        <div className="safc-knob-cluster">
+          <WebParamKnob relayId="threshold" label="Threshold (dB)" />
           <WebParamKnob relayId="ratio" label="Ratio" />
-          <WebParamKnob relayId="attack" label="Attack" />
-          <WebParamKnob relayId="release" label="Release" />
+          <WebParamKnob relayId="attack" label="Attack (ms)" />
+          <WebParamKnob relayId="release" label="Release (ms)" />
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Saturation" headerRight={header('satBypass')} defaultOpen={false}>
-        <div className="safc-detail-grid">
-          <WebParamKnob relayId="preGain" label="Pre-Gain" />
-          <WebParamKnob relayId="postGain" label="Post-Gain" />
+      <CollapsibleSection title="Saturator" headerRight={header('satBypass')} defaultOpen={false}>
+        <div className="safc-knob-cluster">
+          <WebParamKnob relayId="preGain" label="Pre-Gain (dB)" />
+          <WebParamKnob relayId="postGain" label="Post-Gain (dB)" />
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Chorus" headerRight={header('chorusBypass')} defaultOpen={false}>
-        <div className="safc-detail-grid">
-          <WebParamKnob relayId="lforate" label="LFO Rate" />
-          <WebParamKnob relayId="lfodepth" label="LFO Depth" />
-          <WebParamKnob relayId="centerdelay" label="Centre Delay" />
-          <WebParamKnob relayId="chorfeedback" label="Feedback" />
-          <WebParamKnob relayId="chormix" label="Mix" />
+        <div className="safc-detail-grid safc-detail-grid--5-cols">
+          <WebParamKnob relayId="lforate" label="LFO Rate (Hz)" />
+          <WebParamKnob relayId="lfodepth" label="LFO Depth (%)" />
+          <WebParamKnob relayId="centerdelay" label="Centre Delay (ms)" />
+          <WebParamKnob relayId="chorfeedback" label="Feedback (%)" />
+          <WebParamKnob relayId="chormix" label="Mix (%)" />
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Reverb" headerRight={header('reverbBypass')} defaultOpen={false}>
-        <div className="safc-detail-grid">
-          <WebParamKnob relayId="roomSize" label="Room" />
+        <div className="safc-detail-grid safc-detail-grid--5-cols">
+          <WebParamKnob relayId="roomSize" label="Room Size" />
           <WebParamKnob relayId="damping" label="Damping" />
           <WebParamKnob relayId="width" label="Width" />
           <WebParamKnob relayId="wet" label="Wet" />
           <WebParamKnob relayId="dry" label="Dry" />
         </div>
-        <div style={{ marginTop: '0.65rem', display: 'flex', justifyContent: 'flex-start' }}>
-          <BypassToggle relayId="freeze" label="Freeze" />
+        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
+          <BypassToggle relayId="freeze" label="Freeze" showLabel />
         </div>
       </CollapsibleSection>
     </div>

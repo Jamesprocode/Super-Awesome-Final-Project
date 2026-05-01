@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
 import './ui-theme.css'
 import { CollapsibleSection } from './CollapsibleSection.jsx'
+import { PowerIcon } from './PowerIcon.jsx'
 
 function curveExponentToShapeId(c) {
   const x = Number(c)
@@ -191,34 +192,6 @@ function MappedCountBadge({ count }) {
   )
 }
 
-/** IEC standby–style icon (minimal). */
-function PowerIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      aria-hidden
-    >
-      <path
-        d="M12 5v11"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7.94 13.93a6 6 0 1 1 8.12 0"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
 export function MappingView({ visible }) {
   const [state, setState] = useState({ blocks: [], mappings: [] })
 
@@ -367,19 +340,6 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
     <div className="safc-mapping-row">
       <div className="safc-mapping-row__header">
         <span className="safc-mapping-row__title">{param.label}</span>
-        <button
-          type="button"
-          className={`safc-power-toggle ${mapped ? 'is-on' : ''}`}
-          aria-pressed={mapped}
-          title={
-            mapped
-              ? 'Mapped to macro — click to disconnect'
-              : 'Not mapped — set range, then toggle on to map'
-          }
-          onClick={handleTogglePower}
-        >
-          <PowerIcon />
-        </button>
         <select
           className="safc-select safc-mapping-row__curve"
           value={curveShape}
@@ -399,6 +359,19 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
           <option value={2}>Logarithmic</option>
           <option value={3}>Exponential</option>
         </select>
+        <button
+          type="button"
+          className={`safc-power-toggle ${mapped ? 'is-on' : ''}`}
+          aria-pressed={mapped}
+          title={
+            mapped
+              ? 'Mapped to macro — click to disconnect'
+              : 'Not mapped — set range, then toggle on to map'
+          }
+          onClick={handleTogglePower}
+        >
+          <PowerIcon />
+        </button>
       </div>
       <div className="safc-mapping-row__slider">
         <DoubleEndedMappingSlider
@@ -412,12 +385,9 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
           }}
         />
         <div className="safc-mapping-row__range-readout" aria-live="polite">
-          <span className="safc-muted">Range:</span>{' '}
+          <span className="safc-muted">Selected Range:</span>{' '}
           <span className="safc-mapping-row__numbers">
-            {fmtMappingValue(sortedMin)} - {fmtMappingValue(sortedMax)}
-          </span>
-          <span className="safc-muted safc-mapping-row__bounds">
-            (Minimum: {fmtMappingValue(bounds.lo)} | Maximum: {fmtMappingValue(bounds.hi)})
+            {fmtMappingValue(sortedMin)}  to  {fmtMappingValue(sortedMax)}
           </span>
         </div>
       </div>
