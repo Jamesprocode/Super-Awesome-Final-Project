@@ -4,22 +4,42 @@
   align-items: center;
   justify-content: center;
   min-height: 100%;
-  padding: 2rem 1.5rem 4rem;
+  padding: 1rem 1.25rem 2.5rem;
   text-align: center;
 }
 
-.macro-knob-title {
-  margin: 0 0 0.25rem;
-  font-size: clamp(1.5rem, 3vw, 1.85rem);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #f1f5f9;
+/* Large gradient readout above the knob (value duplicates aria on the slider root) */
+.macro-knob-hero-percent {
+  margin: 0.5rem;
+  padding: 0.5rem;
+  font-size: 6rem;
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+
+  background: linear-gradient(
+    118deg,
+    #c4b5fd 0%,
+    #818cf8 22%,
+    #6366f1 45%,
+    #a78bfa 68%,
+    #e879f9 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  filter: drop-shadow(0 2px 14px rgba(99, 102, 241, 0.35));
 }
 
-.macro-knob-hint {
-  margin: 0 0 1.75rem;
-  font-size: 0.85rem;
-  color: #94a3b8;
+/* Fallback when clip isn’t honored (keep readable) */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .macro-knob-hero-percent {
+    color: #a5b4fc;
+    background: none;
+    filter: none;
+  }
 }
 
 .macro-knob {
@@ -75,22 +95,4 @@
 .macro-knob-rim {
   stroke: #475569;
   stroke-width: 2.5;
-}
-
-.macro-knob-readout {
-  position: relative;
-  margin-top: 0.75rem;
-  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
-  font-size: 0.95rem;
-  color: #cbd5e1;
-  letter-spacing: 0.12em;
-  z-index: 1;
-}
-
-.macro-knob-standalone {
-  margin-top: 1.5rem;
-  max-width: 20rem;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: #fbbf24;
 }

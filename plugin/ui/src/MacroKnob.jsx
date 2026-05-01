@@ -36,17 +36,11 @@ export function MacroKnob() {
     slider: null,
   })
   const [norm, setNorm] = useState(kReset)
-  /** @type {null | boolean} */
-  const [hasJuce, setHasJuce] = useState(null)
 
   useEffect(() => {
     const s = Juce.getSliderState?.('macro')
-    if (!s) {
-      setHasJuce(false)
-      return
-    }
+    if (!s) return
 
-    setHasJuce(true)
     drag.current.hasJuce = true
     drag.current.slider = s
     setNorm(s.getNormalisedValue())
@@ -111,10 +105,13 @@ export function MacroKnob() {
   const rot = pointerDeg(norm)
   const fid = sanitizeSvgFragmentId(id)
 
+  const pctDisplay = pctFromNorm(norm)
+
   return (
     <div className="macro-knob-card">
-      <h1 className="macro-knob-title">Macro</h1>
-      <p className="macro-knob-hint">Drag vertically · Double-click: 50%</p>
+      <p className="macro-knob-hero-percent" aria-hidden>
+        {pctDisplay}%
+      </p>
 
       <div
         ref={rootRef}
@@ -129,8 +126,8 @@ export function MacroKnob() {
         aria-label="Macro"
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={pctFromNorm(norm)}
-        aria-valuetext={`${pctFromNorm(norm)} percent`}
+        aria-valuenow={pctDisplay}
+        aria-valuetext={`${pctDisplay} percent`}
         tabIndex={0}
       >
         <div className="macro-knob-halo" aria-hidden />
@@ -212,14 +209,7 @@ export function MacroKnob() {
             <circle cx="100" cy="100" r="6" fill="#020617" stroke="#334155" strokeWidth={1} opacity={0.85} />
           </g>
         </svg>
-        <div className="macro-knob-readout" aria-hidden>
-          {pctFromNorm(norm)}%
-        </div>
       </div>
-
-      {hasJuce === false && (
-        <p className="macro-knob-standalone">Preview (no JUCE) — use Standalone to hear DSP changes.</p>
-      )}
     </div>
   )
 }
