@@ -1,7 +1,22 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
+import { BypassToggle } from './BypassToggle.jsx'
+import { MacroRailSlider } from './MacroRailSlider.jsx'
 import './MacroKnob.css'
 
+const kGainNegDb = 24
+
+function formatGainNormalized(norm) {
+  const v = -kGainNegDb + norm * (2 * kGainNegDb)
+  const rounded = Math.round(v * 10) / 10
+  const sign = rounded >= 0 ? '+' : ''
+  return `${sign}${rounded} dB`
+}
+
+function formatDryWetNormalized(norm) {
+  const p = Math.round(norm * 100)
+  return `${p}%`
+}
 const kSweepDeg = 270
 const TRACK_R = 91
 /** Arc length along r=TRACK_R covering kSweepDeg of the circumference */
@@ -107,29 +122,40 @@ export function MacroKnob() {
 
   const pctDisplay = pctFromNorm(norm)
 
-  return (
-    <div className="macro-knob-card">
-      <p className="macro-knob-hero-percent" aria-hidden>
-        {pctDisplay}%
-      </p>
+  const gainResetNorm = 0.5
 
-      <div
-        ref={rootRef}
-        className="macro-knob"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onDoubleClick={onDoubleClick}
-        role="slider"
-        id={id}
-        aria-label="Macro"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={pctDisplay}
-        aria-valuetext={`${pctDisplay} percent`}
-        tabIndex={0}
-      >
+  return (
+    <div className="macro-page">
+      <header className="macro-page__toolbar">
+        <div className="macro-page__toolbar-bypass">
+          <span className="macro-page__bypass-label">Bypass</span>
+          <BypassToggle relayId="allFxBypass" label="Bypass all effects" />
+        </div>
+      </header>
+
+      <div className="macro-knob-card">
+
+        <p className="macro-knob-hero-percent" aria-hidden>
+          {pctDisplay}%
+        </p>
+
+        <div
+          ref={rootRef}
+          className="macro-knob"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onDoubleClick={onDoubleClick}
+          role="slider"
+          id={id}
+          aria-label="Macro"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pctDisplay}
+          aria-valuetext={`${pctDisplay} percent`}
+          tabIndex={0}
+        >
         <div className="macro-knob-halo" aria-hidden />
         <svg className="macro-knob-dial" viewBox="0 0 200 200" aria-hidden>
           <defs>
@@ -209,6 +235,28 @@ export function MacroKnob() {
             <circle cx="100" cy="100" r="6" fill="#020617" stroke="#334155" strokeWidth={1} opacity={0.85} />
           </g>
         </svg>
+        </div>
+        <div className="macro-page__rail-row">
+          <MacroRailSlider
+            relayId="inputGain"
+            label="Input gain"
+            formatNormalized={formatGainNormalized}
+            resetNormalized={gainResetNorm}
+          />
+          <MacroRailSlider
+            relayId="outputGain"
+            label="Output gain"
+            formatNormalized={formatGainNormalized}
+            resetNormalized={gainResetNorm}
+          />
+          <MacroRailSlider
+            relayId="outputDryWet"
+            label="Dry / wet output"
+            formatNormalized={formatDryWetNormalized}
+            sensitivity={0.004}
+            resetNormalized={1}
+          />
+        </div>
       </div>
     </div>
   )

@@ -233,6 +233,8 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
 
     saturator.prepare(spec);
 
+    dryWetBuffer.setSize ((int) spec.numChannels, (int) samplesPerBlock, false, false, true);
+
     //lowShelfFilter.state = juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, 1000.0f, 0.707f, 1.0f);
     //lowMidPeakFilter.state = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 1000.0f, 0.707f, 1.0f);
     //highMidPeakFilter.state = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 2000.0f, 0.707f, 1.0f);
@@ -319,8 +321,28 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
+    auto numSamples = buffer.getNumSamples();
+    auto nCh = juce::jmin (totalNumInputChannels, totalNumOutputChannels);
+
+    const float inputDb = apvts->getRawParameterValue ("inputGain")->load();
+    const float outputDb = apvts->getRawParameterValue ("outputGain")->load();
+    const float mixWet =
+        juce::jlimit (0.0f, 1.0f, apvts->getRawParameterValue ("outputDryWet")->load());
+    const bool bypassAllFx = apvts->getRawParameterValue ("allFxBypass")->load() > (0.5f - 1.0e-6f);
+
+    buffer.applyGain (juce::Decibels::decibelsToGain (inputDb));
+
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
+
+    if (bypassAllFx)
+    {
+        buffer.applyGain (juce::Decibels::decibelsToGain (outputDb));
+        return;
+    }
+
+    for (int ch = 0; ch < nCh; ++ch)
+        dryWetBuffer.copyFrom (ch, 0, buffer, ch, 0, numSamples);
 
     auto sampleRate = getSampleRate();
 
@@ -392,6 +414,28 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     //process chorus
     if (! *apvts->getRawParameterValue("chorusBypass"))
         chorus.process(context);
+
+    const float dryAmt = 1.0f - mixWet;
+    const float wetAmt = mixWet;
+
+    if (wetAmt <= 1.0e-6f)
+    {
+        for (int ch = 0; ch < nCh; ++ch)
+            buffer.copyFrom (ch, 0, dryWetBuffer, ch, 0, numSamples);
+    }
+    else if (dryAmt > 1.0e-6f)
+    {
+        for (int ch = 0; ch < nCh; ++ch)
+        {
+            auto w = buffer.getWritePointer(ch);
+            auto d = dryWetBuffer.getReadPointer(ch);
+
+            for (int i = 0; i < numSamples; ++i)
+                w[i] = dryAmt * d[i] + wetAmt * w[i];
+        }
+    }
+
+    buffer.applyGain (juce::Decibels::decibelsToGain (outputDb));
 }
 
 
@@ -479,6 +523,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterBool>("reverbBypass",  "Reverb Bypass",  false));
     layout.add(std::make_unique<juce::AudioParameterBool>("chorusBypass",  "Chorus Bypass",  false));
     layout.add(std::make_unique<juce::AudioParameterBool>("satBypass",     "Sat Bypass",     false));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        "inputGain", "Input Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        "outputGain", "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("outputDryWet", "Output Dry/Wet", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterBool> ("allFxBypass", "Bypass All Effects", false));
 
     return layout;
 }

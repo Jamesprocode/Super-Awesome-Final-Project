@@ -99,4 +99,7 @@ private:
 
     std::unique_ptr<ParameterListener> listener;
     std::atomic<bool> isPrepared{ false };
+
+    /** Post–input-trim dry signal per channel for parallel output dry/wet mix */
+    juce::AudioBuffer<float> dryWetBuffer;
 };

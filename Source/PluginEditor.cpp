@@ -10,6 +10,7 @@ namespace
 
 constexpr const char* kSliderRelayIds[] = {
     "macro",
+    "inputGain", "outputGain", "outputDryWet",
     "lowFreq", "lowGain", "lowQ",
     "lowMidFreq", "lowMidGain", "lowMidQ",
     "highMidFreq", "highMidGain", "highMidQ",
@@ -21,6 +22,7 @@ constexpr const char* kSliderRelayIds[] = {
 };
 
 constexpr const char* kToggleRelayIds[] = {
+    "allFxBypass",
     "eqBypass", "compBypass", "satBypass", "chorusBypass", "reverbBypass", "freeze"
 };
 
