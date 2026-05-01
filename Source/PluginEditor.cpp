@@ -66,7 +66,7 @@ std::vector<std::byte> loadFileToByteVector (const juce::File& file)
     return v;
 }
 
-void appendMappingBlocks (juce::Array<juce::var>& blocksOut)
+void appendMappingBlocks (juce::Array<juce::var>& blocksOut, juce::AudioProcessorValueTreeState& apvts)
 {
     auto addBlock = [&] (const juce::String& title,
                          std::initializer_list<std::pair<const char*, const char*>> items)
@@ -79,6 +79,9 @@ void appendMappingBlocks (juce::Array<juce::var>& blocksOut)
             auto p = new juce::DynamicObject();
             p->setProperty ("id", id);
             p->setProperty ("label", label);
+            const auto r = apvts.getParameterRange (id);
+            p->setProperty ("rangeMin", (double) r.start);
+            p->setProperty ("rangeMax", (double) r.end);
             params.add (juce::var (p));
         }
         blockObj->setProperty ("params", juce::var (params));
@@ -125,7 +128,7 @@ juce::String SuperAwesomeVocalChainAudioProcessorEditor::getMappingStateJson() c
 {
     auto* rootObj = new juce::DynamicObject();
     juce::Array<juce::var> blocks;
-    appendMappingBlocks (blocks);
+    appendMappingBlocks (blocks, *audioProcessor.apvts);
     rootObj->setProperty ("blocks", juce::var (blocks));
 
     juce::Array<juce::var> mappings;
