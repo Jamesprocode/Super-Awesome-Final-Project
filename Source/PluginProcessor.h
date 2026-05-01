@@ -11,6 +11,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "MacroController.h"
+#include "ParameterListener.h"
 
 //==============================================================================
 /**
@@ -88,4 +89,14 @@ private:
         juce::dsp::WaveShaper<float>,
         juce::dsp::Gain<float>
     > saturator;
+
+    //Parameter listener for process block
+    std::atomic<bool> eqNeedsUpdate{ true };
+    std::atomic<bool> compNeedsUpdate{ true };
+    std::atomic<bool> satNeedsUpdate{ true };
+    std::atomic<bool> revNeedsUpdate{ true };
+    std::atomic<bool> chorNeedsUpdate{ true };
+
+    std::unique_ptr<ParameterListener> listener;
+    std::atomic<bool> isPrepared{ false };
 };
