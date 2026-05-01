@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { MacroKnob } from './MacroKnob'
 import { MappingView } from './MappingView.jsx'
-import { DetailedView } from './DetailedView.jsx'
 import './App.css'
 
-/** Tab indices must stay in sync with PluginEditor.{h,cpp}: macroPageIndex 0 … */
+/** Tab indices must stay in sync with PluginEditor.{h,cpp}: macroPageIndex / mapPageIndex */
 function clampTab(v) {
   const n = Number(v)
-  if (n === 0 || n === 1 || n === 2) return n
+  if (n === 0 || n === 1) return n
   return 0
 }
 
@@ -26,10 +25,7 @@ export default function App() {
           <MacroKnob />
         </div>
         <div className={tab === 1 ? 'app-panel' : 'app-panel-hidden'}>
-          <MappingView visible={tab === 1} />
-        </div>
-        <div className={tab === 2 ? 'app-panel' : 'app-panel-hidden'}>
-          <DetailedView visible={tab === 2} />
+          <MappingView />
         </div>
       </main>
     </div>

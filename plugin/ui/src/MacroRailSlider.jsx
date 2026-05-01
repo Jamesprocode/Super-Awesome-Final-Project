@@ -12,6 +12,8 @@ export function MacroRailSlider({
   formatNormalized,
   sensitivity = 0.003,
   resetNormalized = null,
+  /** Optional: normalized 0–1 after user/JUCE commits */
+  onNormalisedChange,
 }) {
   const drag = useRef({
     active: false,
@@ -33,10 +35,12 @@ export function MacroRailSlider({
     drag.current.slider = s
     setNorm(s.getNormalisedValue())
     const lid = s.valueChangedEvent.addListener(() => {
-      setNorm(s.getNormalisedValue())
+      const n = s.getNormalisedValue()
+      setNorm(n)
+      onNormalisedChange?.(n)
     })
     return () => s.valueChangedEvent.removeListener(lid)
-  }, [relayId])
+  }, [relayId, onNormalisedChange])
 
   const getValue = useCallback(() => {
     if (drag.current.hasJuce && drag.current.slider) return drag.current.slider.getNormalisedValue()
@@ -45,12 +49,14 @@ export function MacroRailSlider({
 
   const setNormalised = useCallback((v) => {
     const x = Math.min(1, Math.max(0, v))
-    if (drag.current.hasJuce && drag.current.slider) drag.current.slider.setNormalisedValue(x)
-    else {
+    if (drag.current.hasJuce && drag.current.slider) {
+      drag.current.slider.setNormalisedValue(x)
+    } else {
       drag.current.local = x
       setNorm(x)
+      onNormalisedChange?.(x)
     }
-  }, [])
+  }, [onNormalisedChange])
 
   const onPointerDown = (e) => {
     e.preventDefault()

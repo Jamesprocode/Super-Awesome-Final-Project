@@ -212,3 +212,34 @@
   stroke: #475569;
   stroke-width: 2.5;
 }
+
+/* Mini macro dock (mapping page shares macro relay) */
+.macro-knob.macro-knob--compact {
+  width: 7rem;
+  max-width: 7rem;
+  padding: 0.35rem;
+  border-radius: 1rem;
+}
+
+.macro-knob-halo.macro-knob-halo--compact {
+  border-radius: 1rem;
+}
+
+.macro-knob-dial.macro-knob-dial--compact {
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+}
+
+.safc-mini-macro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.safc-mini-macro__pct {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #a5b4fc;
+}

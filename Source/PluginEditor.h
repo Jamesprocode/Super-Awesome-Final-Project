@@ -36,12 +36,10 @@ private:
 
     juce::TextButton macroTab { "MACRO" };
     juce::TextButton mapTab { "MAPPING" };
-    juce::TextButton detailTab { "DETAILED" };
 
     void showPage (int index);
     static constexpr int macroPageIndex = 0;
     static constexpr int mapPageIndex = 1;
-    static constexpr int detailedPageIndex = 2;
 
     // Inspector inspects `content`
     std::unique_ptr<melatonin::Inspector> inspector;

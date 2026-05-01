@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
 import { PowerIcon } from './PowerIcon.jsx'
 
-export function BypassToggle({ relayId, label = 'Bypass', showLabel = false }) {
+export function BypassToggle({ relayId, label = 'Bypass', showLabel = false, onBypassSynced }) {
   const [bypassOn, setBypassOn] = useState(false)
 
   useEffect(() => {
@@ -11,16 +11,23 @@ export function BypassToggle({ relayId, label = 'Bypass', showLabel = false }) {
       setBypassOn(false)
       return undefined
     }
-    setBypassOn(t.getValue())
-    const lid = t.valueChangedEvent.addListener(() => setBypassOn(t.getValue()))
+    const apply = (v) => {
+      setBypassOn(v)
+      onBypassSynced?.(v)
+    }
+    apply(t.getValue())
+    const lid = t.valueChangedEvent.addListener(() => apply(t.getValue()))
     return () => t.valueChangedEvent.removeListener(lid)
-  }, [relayId])
+  }, [relayId, onBypassSynced])
 
   function flip() {
     const t = Juce.getToggleState?.(relayId)
     const next = !bypassOn
     if (t) t.setValue(next)
-    else setBypassOn(next)
+    else {
+      setBypassOn(next)
+      onBypassSynced?.(next)
+    }
   }
 
   return (

@@ -1,7 +1,7 @@
 import { useCallback, useId, useState } from 'react'
 
 /**
- * Accessible expand/collapse for effect groups (Detailed + Mapping views).
+ * Accessible expand/collapse for effect groups (Mapping sections).
  */
 export function CollapsibleSection({
   title,

@@ -1,8 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
 import './ui-theme.css'
+import { BypassToggle } from './BypassToggle.jsx'
 import { CollapsibleSection } from './CollapsibleSection.jsx'
+import { MacroRailSlider } from './MacroRailSlider.jsx'
+import { MiniMacroKnob } from './MiniMacroKnob.jsx'
 import { PowerIcon } from './PowerIcon.jsx'
+
+/** Last edited min/max/curve while unmapped; survives toggling macro mapping within the SPA session */
+const globalMappingDrafts = new Map()
+
+const BLOCK_TITLE_TO_BYPASS_RELAY = {
+  EQ: 'eqBypass',
+  Compressor: 'compBypass',
+  Saturator: 'satBypass',
+  Chorus: 'chorusBypass',
+  Reverb: 'reverbBypass',
+}
 
 function curveExponentToShapeId(c) {
   const x = Number(c)
@@ -15,7 +29,6 @@ function curveExponentToShapeId(c) {
   return 1
 }
 
-/** Fallback when JSON has no DSP range (e.g. offline preview). */
 function getParamDomain(rangeMinRaw, rangeMaxRaw) {
   let lo = Number(rangeMinRaw)
   let hi = Number(rangeMaxRaw)
@@ -39,10 +52,12 @@ function fmtMappingValue(v) {
   return Number(v.toFixed(4))
 }
 
-/**
- * Horizontal double-ended slider: draggable low / high thumbs on APVTS min–max.
- * Commits mapped values on drag end via onCommitRange.
- */
+/** Normalised slider 0→1 scaled with same domain helpers as macro mapping rail */
+function scaledFromRelayNorm(norm01, dmLo, span) {
+  if (norm01 == null || !Number.isFinite(norm01)) return null
+  return dmLo + norm01 * span
+}
+
 function DoubleEndedMappingSlider({
   rangeMin,
   rangeMax,
@@ -50,6 +65,7 @@ function DoubleEndedMappingSlider({
   high,
   onAdjustRange,
   onCommitRange,
+  currentScaledValue,
 }) {
   const trackRef = useRef(null)
   const dragRoleRef = useRef(null)
@@ -77,7 +93,6 @@ function DoubleEndedMappingSlider({
     onCommitRange?.()
   }, [onCommitRange])
 
-  /* Pointer may leave OS window — still finalize via window bubble. Track uses pointer capture for move. */
   useEffect(() => {
     const up = () => {
       finishDrag()
@@ -155,6 +170,14 @@ function DoubleEndedMappingSlider({
   const leftPct = Math.min(pl, ph) * 100
   const widthPct = Math.abs(ph - pl) * 100
 
+  let markerPos = null
+  if (
+    currentScaledValue != null &&
+    Number.isFinite(Number(currentScaledValue))
+  ) {
+    markerPos = clamp(norm(Number(currentScaledValue)), 0, 1)
+  }
+
   return (
     <div className="safc-range-double">
       <div
@@ -171,6 +194,13 @@ function DoubleEndedMappingSlider({
           className="safc-range-double__fill"
           style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
         />
+        {markerPos != null ? (
+          <span
+            className="safc-range-double__marker"
+            title="Current parameter value (with macro)"
+            style={{ left: `${markerPos * 100}%` }}
+          />
+        ) : null}
         <span className="safc-range-double__thumb" style={{ left: `${pl * 100}%` }} />
         <span className="safc-range-double__thumb" style={{ left: `${ph * 100}%` }} />
       </div>
@@ -178,7 +208,6 @@ function DoubleEndedMappingSlider({
   )
 }
 
-/** Small badge listing how many mapped params live in this block (visible when collapsed too). */
 function MappedCountBadge({ count }) {
   if (count <= 0) return null
   return (
@@ -192,9 +221,10 @@ function MappedCountBadge({ count }) {
   )
 }
 
-export function MappingView({ visible }) {
+export function MappingView() {
   const [state, setState] = useState({ blocks: [], mappings: [] })
-
+  /** Last fixed normalised slider value before mapping (restore on unmap) */
+  const fixedNormCache = useRef(new Map())
   const fetchState = useCallback(async () => {
     const fn = Juce.getNativeFunction?.('safc_getMappingStateJson')
     if (!fn) {
@@ -214,9 +244,8 @@ export function MappingView({ visible }) {
   }, [])
 
   useEffect(() => {
-    if (!visible) return
-    fetchState()
-  }, [visible, fetchState])
+    void fetchState()
+  }, [fetchState])
 
   const mappingsByTarget = useMemo(() => {
     const m = new Map()
@@ -226,53 +255,67 @@ export function MappingView({ visible }) {
     return m
   }, [state.mappings])
 
-  const applyFn = useCallback(async (payload) => {
-    const f = Juce.getNativeFunction?.('safc_applyMacroMapping')
-    if (!f) return
-    await f(payload)
-    await fetchState()
-  }, [fetchState])
+  const applyFn = useCallback(
+    async (payload) => {
+      const f = Juce.getNativeFunction?.('safc_applyMacroMapping')
+      if (!f) return
+      await f(payload)
+      await fetchState()
+    },
+    [fetchState],
+  )
 
-  const removeFn = useCallback(async (paramId) => {
-    const f = Juce.getNativeFunction?.('safc_removeMacroMapping')
-    if (!f) return
-    await f(paramId)
-    await fetchState()
-  }, [fetchState])
-
-  if (!visible) return null
+  const removeFn = useCallback(
+    async (paramId) => {
+      const f = Juce.getNativeFunction?.('safc_removeMacroMapping')
+      if (!f) return
+      await f(paramId)
+      await fetchState()
+    },
+    [fetchState],
+  )
 
   return (
-    <div className="safc-page">
+    <div className="safc-page safc-mapping-layout">
       <p className="safc-muted" style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        Map each DSP parameter to macro 0→1 using the green range strip. Use the curve shape, then
-        tap the power control to attach or detach mapping.
+        Map DSP parameters to the macro knob (green strip), or bypass each effect section. When a row
+        is unmapped, use the slider to set a fixed parameter value — your range and curve choices
+        are kept when toggling mapping. The teal dot shows the live value while mapped.
       </p>
 
       {(state.blocks || []).map((block) => {
         const mappedInBlock =
           block.params?.filter((p) => mappingsByTarget.has(p.id)).length ?? 0
+        const bypassRelayId = BLOCK_TITLE_TO_BYPASS_RELAY[block.title]
 
         return (
           <CollapsibleSection
             key={block.title}
             title={block.title}
-            headerRight={<MappedCountBadge count={mappedInBlock} />}
+            headerRight={
+              <>
+                <MappedCountBadge count={mappedInBlock} />
+                {bypassRelayId ? (
+                  <BypassToggle
+                    relayId={bypassRelayId}
+                    label='Bypass'
+                    showLabel
+                  />
+                ) : null}
+              </>
+            }
             compactTitle
             defaultOpen={false}
             panelClassName="safc-mapping-block"
           >
             {(block.params || []).map((p) => (
               <MappingRow
-                key={
-                  mappingsByTarget.get(p.id)
-                    ? `${p.id}_${mappingsByTarget.get(p.id).minValue}_${mappingsByTarget.get(p.id).maxValue}_${mappingsByTarget.get(p.id).curveExponent}`
-                    : `${p.id}_unset`
-                }
+                key={p.id}
                 param={p}
                 existing={mappingsByTarget.get(p.id)}
                 onMap={applyFn}
                 onUnmap={removeFn}
+                fixedNormCacheRef={fixedNormCache}
               />
             ))}
           </CollapsibleSection>
@@ -282,40 +325,97 @@ export function MappingView({ visible }) {
       {!Juce.getNativeFunction?.('safc_getMappingStateJson') && (
         <p className="safc-preview-note">Preview (no JUCE backend) — mapping controls are inert.</p>
       )}
+
+      <footer className="safc-mapping-macro-footer">
+        <MiniMacroKnob />
+        <span className="safc-muted safc-mini-macro-hint">
+          Matches the Macro tab — audition mapped ranges without leaving Mapping.
+        </span>
+      </footer>
     </div>
   )
 }
 
-function MappingRow({ param, existing, onMap, onUnmap }) {
+function MappingRow({
+  param,
+  existing,
+  onMap,
+  onUnmap,
+  fixedNormCacheRef,
+}) {
   const mapped = Boolean(existing)
   const rMin = param.rangeMin
   const rMax = param.rangeMax
   const bounds = useMemo(() => getParamDomain(rMin, rMax), [rMin, rMax])
+  const isFreezeParam = param.id === 'freeze'
 
   const [minV, setMinV] = useState(() => {
-    const lo = Number.isFinite(Number(existing?.minValue))
-      ? Number(existing.minValue)
-      : bounds.lo
-    const hi = Number.isFinite(Number(existing?.maxValue))
-      ? Number(existing.maxValue)
-      : bounds.hi
-    return Math.min(lo, hi)
+    if (existing && Number.isFinite(Number(existing.minValue))) {
+      const lo = Number(existing.minValue)
+      const hi = Number(existing.maxValue)
+      return Math.min(lo, hi)
+    }
+    const draft = globalMappingDrafts.get(param.id)
+    if (draft && Number.isFinite(draft.min)) return draft.min
+    return bounds.lo
   })
   const [maxV, setMaxV] = useState(() => {
-    const lo = Number.isFinite(Number(existing?.minValue))
-      ? Number(existing.minValue)
-      : bounds.lo
-    const hi = Number.isFinite(Number(existing?.maxValue))
-      ? Number(existing.maxValue)
-      : bounds.hi
-    return Math.max(lo, hi)
+    if (existing && Number.isFinite(Number(existing.maxValue))) {
+      const lo = Number(existing.minValue)
+      const hi = Number(existing.maxValue)
+      return Math.max(lo, hi)
+    }
+    const draft = globalMappingDrafts.get(param.id)
+    if (draft && Number.isFinite(draft.max)) return draft.max
+    return bounds.hi
   })
-  const [curveShape, setCurveShape] = useState(() =>
-    curveExponentToShapeId(existing?.curveExponent ?? 1),
-  )
+  const [curveShape, setCurveShape] = useState(() => {
+    const draft = globalMappingDrafts.get(param.id)
+    if (draft && Number.isFinite(draft.curve)) return draft.curve
+    return curveExponentToShapeId(existing?.curveExponent ?? 1)
+  })
+
+  /** Live parameter value derived from slider relay norm (tracks macro while mapped). */
+  const [relayNorm, setRelayNorm] = useState(null)
+
+  useEffect(() => {
+    if (!existing) return
+    const lo = Number(existing.minValue)
+    const hi = Number(existing.maxValue)
+    setMinV(Math.min(lo, hi))
+    setMaxV(Math.max(lo, hi))
+    setCurveShape(curveExponentToShapeId(existing.curveExponent ?? 1))
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `existing` is a new object on every JSON fetch; compare fields only
+  }, [
+    existing?.curveExponent,
+    existing?.maxValue,
+    existing?.minValue,
+    existing?.targetParamID,
+  ])
+
+  useEffect(() => {
+    globalMappingDrafts.set(param.id, {
+      min: minV,
+      max: maxV,
+      curve: curveShape,
+    })
+  }, [curveShape, maxV, minV, param.id])
+
+  useEffect(() => {
+    const s = Juce.getSliderState?.(param.id)
+    if (!s) {
+      setRelayNorm(null)
+      return undefined
+    }
+    setRelayNorm(s.getNormalisedValue())
+    const lid = s.valueChangedEvent.addListener(() => setRelayNorm(s.getNormalisedValue()))
+    return () => s.valueChangedEvent.removeListener(lid)
+  }, [param.id])
 
   const sortedMin = minV
   const sortedMax = maxV
+  const currentScaledLive = scaledFromRelayNorm(relayNorm, bounds.lo, bounds.span)
 
   const emitMap = useCallback(() => {
     void onMap({
@@ -331,10 +431,60 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
     setMaxV(Math.max(a, b))
   }, [])
 
-  const handleTogglePower = () => {
-    if (mapped) void onUnmap(param.id)
-    else void emitMap()
+  const readSliderNormSafe = () => {
+    try {
+      const s = Juce.getSliderState?.(param.id)
+      if (!s?.getNormalisedValue) return 0.5
+      const n = s.getNormalisedValue()
+      return Number.isFinite(n) ? n : 0.5
+    } catch {
+      return 0.5
+    }
   }
+
+  const onFreezeBypassSynced = useCallback(
+    (on) => {
+      fixedNormCacheRef.current.set(param.id, on ? 1 : 0)
+    },
+    [fixedNormCacheRef, param.id],
+  )
+
+  const onFixedSliderNormChange = useCallback(
+    (n) => {
+      if (!mapped) fixedNormCacheRef.current.set(param.id, n)
+    },
+    [fixedNormCacheRef, mapped, param.id],
+  )
+
+  const handleTogglePower = () => {
+    const s = Juce.getSliderState?.(param.id)
+    const nextMapped = !mapped
+
+    if (nextMapped) {
+      fixedNormCacheRef.current.set(param.id, readSliderNormSafe())
+      void emitMap()
+      return
+    }
+
+    void (async () => {
+      await onUnmap(param.id)
+      const saved = fixedNormCacheRef.current.get(param.id)
+      if (saved !== undefined && s?.setNormalisedValue) {
+        requestAnimationFrame(() => {
+          try {
+            s.setNormalisedValue(saved)
+          } catch {
+            /* ignore */
+          }
+        })
+      }
+    })()
+  }
+
+  const formatFixedNorm = useCallback(
+    (norm01) => `${fmtMappingValue(bounds.lo + norm01 * bounds.span)}`,
+    [bounds.lo, bounds.span],
+  )
 
   return (
     <div className="safc-mapping-row">
@@ -343,6 +493,7 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
         <select
           className="safc-select safc-mapping-row__curve"
           value={curveShape}
+          disabled={isFreezeParam}
           onChange={(e) => {
             const next = Number(e.target.value)
             setCurveShape(next)
@@ -366,7 +517,7 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
           title={
             mapped
               ? 'Mapped to macro — click to disconnect'
-              : 'Not mapped — set range, then toggle on to map'
+              : 'Not mapped — set range / value, then toggle on to map'
           }
           onClick={handleTogglePower}
         >
@@ -374,22 +525,57 @@ function MappingRow({ param, existing, onMap, onUnmap }) {
         </button>
       </div>
       <div className="safc-mapping-row__slider">
-        <DoubleEndedMappingSlider
-          rangeMin={rMin}
-          rangeMax={rMax}
-          low={minV}
-          high={maxV}
-          onAdjustRange={handleRangeAdjust}
-          onCommitRange={() => {
-            if (mapped) emitMap()
-          }}
-        />
-        <div className="safc-mapping-row__range-readout" aria-live="polite">
-          <span className="safc-muted">Selected Range:</span>{' '}
-          <span className="safc-mapping-row__numbers">
-            {fmtMappingValue(sortedMin)}  to  {fmtMappingValue(sortedMax)}
-          </span>
-        </div>
+        {mapped ? (
+          <>
+            <DoubleEndedMappingSlider
+              rangeMin={rMin}
+              rangeMax={rMax}
+              low={sortedMin}
+              high={sortedMax}
+              currentScaledValue={
+                currentScaledLive !== null && Number.isFinite(currentScaledLive)
+                  ? currentScaledLive
+                  : null
+              }
+              onAdjustRange={handleRangeAdjust}
+              onCommitRange={() => {
+                if (mapped) emitMap()
+              }}
+            />
+            {currentScaledLive != null && Number.isFinite(currentScaledLive) ? (
+              <div className="safc-mapping-row__live" aria-live="polite">
+                <span className="safc-muted">Live:</span>{' '}
+                <strong>{fmtMappingValue(currentScaledLive)}</strong>
+              </div>
+            ) : null}
+          </>
+        ) : isFreezeParam ? (
+          <div className="safc-mapping-row__freeze">
+            <BypassToggle
+              relayId="freeze"
+              label="Freeze"
+              showLabel
+              onBypassSynced={onFreezeBypassSynced}
+            />
+          </div>
+        ) : (
+          <MacroRailSlider
+            relayId={param.id}
+            label="Fixed parameter value"
+            formatNormalized={(n) => formatFixedNorm(n)}
+            sensitivity={0.003}
+            resetNormalized={null}
+            onNormalisedChange={onFixedSliderNormChange}
+          />
+        )}
+        {!mapped ? null : (
+          <div className="safc-mapping-row__range-readout" aria-live="polite">
+            <span className="safc-muted">Mapped range:</span>{' '}
+            <span className="safc-mapping-row__numbers">
+              {fmtMappingValue(sortedMin)} to {fmtMappingValue(sortedMax)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -297,11 +297,9 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     content.addAndMakeVisible (*webView);
     content.addAndMakeVisible (macroTab);
     content.addAndMakeVisible (mapTab);
-    content.addAndMakeVisible (detailTab);
 
     macroTab.onClick = [this] { showPage (macroPageIndex); };
     mapTab.onClick = [this] { showPage (mapPageIndex); };
-    detailTab.onClick = [this] { showPage (detailedPageIndex); };
 
     juce::UndoManager* undo = nullptr;
 
@@ -353,10 +351,9 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
     const int tabHeight = 50;
     auto tabs = bounds.removeFromBottom (tabHeight);
-    auto tabThird = tabs.getWidth() / 3;
-    macroTab.setBounds (tabs.removeFromLeft (tabThird));
-    mapTab.setBounds (tabs.removeFromLeft (tabThird));
-    detailTab.setBounds (tabs);
+    const auto half = tabs.getWidth() / 2;
+    macroTab.setBounds (tabs.removeFromLeft (half));
+    mapTab.setBounds (tabs);
 
     if (webView != nullptr)
         webView->setBounds (bounds);
@@ -366,7 +363,6 @@ void SuperAwesomeVocalChainAudioProcessorEditor::showPage (int index)
 {
     macroTab.setToggleState (index == macroPageIndex, juce::dontSendNotification);
     mapTab.setToggleState (index == mapPageIndex, juce::dontSendNotification);
-    detailTab.setToggleState (index == detailedPageIndex, juce::dontSendNotification);
 
     if (webView == nullptr)
         return;
