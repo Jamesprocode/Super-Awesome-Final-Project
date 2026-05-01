@@ -2,7 +2,24 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
 import './MacroKnob.css'
 
+const kSweepDeg = 270
+const TRACK_R = 91
+/** Arc length along r=TRACK_R covering kSweepDeg of the circumference */
+const TRACK_ARC_LEN = (kSweepDeg / 360) * 2 * Math.PI * TRACK_R
+
 const kReset = 0.5
+const pctFromNorm = (x) => Math.round(x * 100)
+
+/** Stable fragment ids — React `useId()` can contain `:` which breaks `url(#id)` in SVG in some browsers. */
+function sanitizeSvgFragmentId(reactId) {
+  const slug = reactId.replace(/[^a-zA-Z0-9_-]/g, '')
+  return `mk-${slug || 'knob'}`
+}
+
+/** Pointer angle from value: 270° sweep, 7 o'clock → 5 o'clock style (matching vertical-drag plugins). */
+function pointerDeg(normalised01) {
+  return -135 + normalised01 * kSweepDeg
+}
 
 /**
  * 0..1 macro control bound to JUCE WebSliderRelay "macro" and APVTS "macro".
@@ -91,13 +108,13 @@ export function MacroKnob() {
     setNormalised(kReset)
   }
 
-  // 7 o’clock → 5 o’clock (270°)
-  const rot = -135 + norm * 270
+  const rot = pointerDeg(norm)
+  const fid = sanitizeSvgFragmentId(id)
 
   return (
     <div className="macro-knob-card">
       <h1 className="macro-knob-title">Macro</h1>
-      <p className="macro-knob-hint">Drag vertically · Double-click: 0.5</p>
+      <p className="macro-knob-hint">Drag vertically · Double-click: 50%</p>
 
       <div
         ref={rootRef}
@@ -111,43 +128,92 @@ export function MacroKnob() {
         id={id}
         aria-label="Macro"
         aria-valuemin={0}
-        aria-valuemax={1}
-        aria-valuenow={Number(norm.toFixed(4))}
+        aria-valuemax={100}
+        aria-valuenow={pctFromNorm(norm)}
+        aria-valuetext={`${pctFromNorm(norm)} percent`}
         tabIndex={0}
       >
         <div className="macro-knob-halo" aria-hidden />
         <svg className="macro-knob-dial" viewBox="0 0 200 200" aria-hidden>
           <defs>
-            <radialGradient id={`${id}-face`} cx="30%" cy="30%" r="80%">
-              <stop offset="0%" stopColor="#4f46e5" />
-              <stop offset="55%" stopColor="#312e81" />
+            <radialGradient id={`${fid}-face`} cx="32%" cy="28%" r="78%">
+              <stop offset="0%" stopColor="#6366f1" />
+              <stop offset="45%" stopColor="#4338ca" />
               <stop offset="100%" stopColor="#1e1b4b" />
             </radialGradient>
-            <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="1.2" result="b" />
+            <linearGradient id={`${fid}-cap`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#64748b" />
+              <stop offset="55%" stopColor="#0f172a" />
+              <stop offset="100%" stopColor="#334155" />
+            </linearGradient>
+            <radialGradient id={`${fid}-sheen`} cx="38%" cy="32%" r="55%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.22} />
+              <stop offset="45%" stopColor="#c7d2fe" stopOpacity={0.06} />
+              <stop offset="100%" stopColor="#1e1b4b" stopOpacity={0} />
+            </radialGradient>
+            <filter id={`${fid}-soft`} x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="0.85" result="b" />
               <feMerge>
                 <feMergeNode in="b" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
-          <circle cx="100" cy="100" r="88" className="macro-knob-rim" fill="none" />
-          <circle cx="100" cy="100" r="80" fill={`url(#${id}-face)`} className="macro-knob-face" />
-          <g transform={`rotate(${rot} 100 100)`} filter={`url(#${id}-glow)`}>
-            <line
-              x1="100"
-              y1="100"
-              x2="100"
-              y2="40"
-              stroke="#e0e7ff"
-              strokeWidth="3.5"
+
+          {/* Sweep track — aligned with SVG stroke origin per sector after rotate(-135) */}
+          <g className="macro-knob-static-bezel">
+            <circle
+              cx="100"
+              cy="100"
+              r={TRACK_R}
+              className="macro-knob-track-bg"
+              fill="none"
               strokeLinecap="round"
+              strokeDasharray={`${TRACK_ARC_LEN} 999`}
+              transform="rotate(135 100 100)"
             />
+            <circle
+              cx="100"
+              cy="100"
+              r={TRACK_R}
+              className="macro-knob-track-fill"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${TRACK_ARC_LEN * norm} 999`}
+              transform="rotate(135 100 100)"
+            />
+            {/* End-stop ticks (min / default / max) */}
+            <g stroke="#64748b" strokeWidth={2} strokeLinecap="round">
+              <line transform="rotate(-135 100 100)" x1="100" y1="7" x2="100" y2="17" />
+              <line transform="rotate(-90 100 100)" x1="100" y1="7" x2="100" y2="17" />
+              <line transform="rotate(-45 100 100)" x1="100" y1="7" x2="100" y2="17" />
+              <line transform="rotate(0 100 100)" x1="100" y1="7" x2="100" y2="17" />
+              <line transform="rotate(45 100 100)" x1="100" y1="7" x2="100" y2="17" />
+              <line transform="rotate(90 100 100)" x1="100" y1="7" x2="100" y2="17" />
+              <line transform="rotate(135 100 100)" x1="100" y1="7" x2="100" y2="17" />
+            </g>
+            <circle cx="100" cy="100" r="88" className="macro-knob-rim" fill="none" />
           </g>
-          <circle cx="100" cy="100" r="7" fill="#0f172a" stroke="#a5b4fc" strokeWidth="1.5" />
+
+          {/* Rotating knob: face + glare + chunky pointer — rotation reads clearly */}
+          <g transform={`rotate(${rot} 100 100)`} className="macro-knob-spin">
+            <circle cx="100" cy="100" r="80" fill={`url(#${fid}-face)`} className="macro-knob-face" />
+            <circle cx="100" cy="100" r="74" fill={`url(#${fid}-sheen)`} />
+            <path
+              d="M100 42 L114 116 L86 116 Z"
+              className="macro-knob-pointer"
+              fill="#f8fafc"
+              stroke="#a5b4fc"
+              strokeWidth={1}
+              strokeLinejoin="round"
+              filter={`url(#${fid}-soft)`}
+            />
+            <circle cx="100" cy="100" r="11" fill={`url(#${fid}-cap)`} stroke="#94a3b8" strokeWidth={1} />
+            <circle cx="100" cy="100" r="6" fill="#020617" stroke="#334155" strokeWidth={1} opacity={0.85} />
+          </g>
         </svg>
         <div className="macro-knob-readout" aria-hidden>
-          {norm.toFixed(3)}
+          {pctFromNorm(norm)}%
         </div>
       </div>
 
