@@ -1,0 +1,208 @@
+/* Shared “Macro-style” chrome for web views outside the rotary itself */
+.safc-page {
+  padding: 1.25rem 1.25rem 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100%;
+}
+
+.safc-panel {
+  margin-bottom: 1.75rem;
+  padding: 0;
+  border-radius: 1rem;
+  background: radial-gradient(ellipse 100% 80% at 50% -20%, rgba(99, 102, 241, 0.12), rgba(15, 23, 42, 0.72));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+}
+
+.safc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.safc-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #f1f5f9;
+}
+
+.safc-muted {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.safc-preview-note {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  line-height: 1.4;
+}
+
+.safc-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr));
+  gap: 0.75rem 0.85rem;
+  align-items: start;
+}
+
+.safc-mapping-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #e0e7ff;
+  background: rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(165, 180, 252, 0.35);
+  padding: 0.2rem 0.48rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.safc-mapping-title {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.safc-collapsible-inner-pad {
+  padding: 0.85rem 1.1rem 1rem;
+}
+
+.safc-collapse-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+}
+
+.safc-collapse-trigger:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 3px;
+  border-radius: 0.35rem;
+}
+
+.safc-collapse-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  color: #a5b4fc;
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+.safc-collapse-chevron[data-open='true'] {
+  transform: rotate(90deg);
+}
+
+.safc-collapse-head-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.safc-collapsible-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.safc-collapsible-body[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+.safc-collapsible-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.safc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.safc-select {
+  min-width: 10rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.safc-input-num {
+  width: 5.75rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(129, 140, 248, 0.28);
+  background: #020617;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.safc-btn {
+  padding: 0.38rem 0.72rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(165, 180, 252, 0.5);
+  background: rgba(79, 70, 229, 0.25);
+  color: #e0e7ff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.safc-btn.secondary {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.safc-btn:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+.safc-small-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.safc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.safc-toggle input {
+  width: 2.85rem;
+  height: 1.45rem;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
