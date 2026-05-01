@@ -328,9 +328,6 @@ export function MappingView() {
 
       <footer className="safc-mapping-macro-footer">
         <MiniMacroKnob />
-        <span className="safc-muted safc-mini-macro-hint">
-          Matches the Macro tab — audition mapped ranges without leaving Mapping.
-        </span>
       </footer>
     </div>
   )

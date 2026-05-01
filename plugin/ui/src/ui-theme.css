@@ -1,7 +1,7 @@
 /* Shared “Macro-style” chrome for web views outside the rotary itself */
 .safc-page {
   padding: 1.25rem 1.25rem 2rem;
-  max-width: 960px;
+  max-width: 75%;
   margin: 0 auto;
   min-height: 100%;
 }
@@ -423,7 +423,8 @@
 
 .safc-mapping-layout {
   box-sizing: border-box;
-  padding-bottom: 10.5rem;
+  /* Space so last collapsible rows stay above the fixed macro dock */
+  padding-bottom: 9.5rem;
 }
 
 .safc-range-double__marker {
@@ -456,19 +457,25 @@
 }
 
 .safc-mapping-macro-footer {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
-  z-index: 8;
+  z-index: 100;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
+  justify-content: flex-start;
   gap: 1rem;
-  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-  margin-top: auto;
-  background: linear-gradient(to top, rgba(2, 6, 23, 0.96), rgba(15, 23, 42, 0.92));
-  border-top: 1px solid rgba(129, 140, 248, 0.22);
-  backdrop-filter: blur(10px);
+  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+  background: transparent;
+}
+
+/* Let clicks reach mapping rows under the footer; knob stays usable */
+.safc-mapping-macro-footer > * {
+  pointer-events: auto;
 }
 
 .safc-mini-macro-hint {

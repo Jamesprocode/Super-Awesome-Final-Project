@@ -100,7 +100,7 @@ export function MiniMacroKnob() {
   return (
     <div className="safc-mini-macro">
       <p className="safc-mini-macro__pct" aria-hidden>
-        Macro {pctDisplay}%
+        {pctDisplay}%
       </p>
       <div
         className="macro-knob macro-knob--compact"
