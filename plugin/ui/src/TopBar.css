@@ -1,5 +1,18 @@
+/**
+ * Matches vertical padding + tab row (~0.78rem caps + pill padding).
+ * Keeps `.app-main` cleared when the header is viewport-fixed (out of flow).
+ */
+:root {
+  --app-topbar-h: 3.25rem;
+}
+
 .app-topbar {
-  flex: 0 0 auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;

@@ -7,6 +7,11 @@
   align-items: stretch;
 }
 
+.app-shell {
+  /* Offset for viewport-fixed `.app-topbar` (declared in TopBar.css) */
+  padding-top: var(--app-topbar-h, 3.25rem);
+}
+
 .app-main {
   flex: 1;
   display: flex;
