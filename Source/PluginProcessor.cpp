@@ -9,6 +9,54 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include <array>
+#include <cmath>
+
+namespace {
+
+/** Factorials for n in [0 … 5] — factorial(0) == 1 for unrank indexing. */
+int factLookup (int n)
+{
+    static const int tbl[] { 1, 1, 2, 6, 24, 120 };
+    const int i = juce::jlimit (0, 5, n);
+    return tbl[i];
+}
+
+enum class FxEffectId : uint8_t {
+    Eq     = 0,
+    Comp   = 1,
+    Saturator = 2,
+    Chorus = 3,
+    Reverb = 4
+};
+
+/** Converts 0 … 119 to one of the 5! effect permutations (lex/unrank convention shared with UI). */
+void permutationIndexToOrder (int rawIndex, std::array<uint8_t, 5>& out)
+{
+    const int index = juce::jlimit (0, 119, rawIndex);
+    uint8_t pool[] { 0, 1, 2, 3, 4 };
+    int poolSize = 5;
+    int k = index;
+
+    for (int pi = 0; pi < 5; ++pi)
+    {
+        const int f = factLookup (poolSize - 1);
+        jassert (f > 0);
+        const int pos = k / f;
+        k %= f;
+        jassert (pos >= 0 && pos < poolSize);
+
+        out[(size_t) pi] = pool[pos];
+
+        for (int j = pos + 1; j < poolSize; ++j)
+            pool[(size_t) (j - 1)] = pool[j];
+
+        --poolSize;
+    }
+}
+
+} // namespace
+
 //==============================================================================
 SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -381,29 +429,45 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
         saturator.get<2>().setGainLinear(*apvts->getRawParameterValue("postGain"));
     }
 
-    // Process the entire buffer at once (stereo)
-    // juce::dsp::AudioBlock<float> block (buffer);
-    // juce::dsp::ProcessContextReplacing<float> context (block);
-    //process eq
-    if (! *apvts->getRawParameterValue("eqBypass"))
+    const int chainIndex = static_cast<int> (
+        std::lround ((double) apvts->getRawParameterValue ("fxChainOrder")->load()));
+    std::array<uint8_t, 5> fxOrder {};
+    permutationIndexToOrder (chainIndex, fxOrder);
+
+    for (int step = 0; step < 5; ++step)
     {
-        lowShelfFilter.process(context);
-        lowMidPeakFilter.process(context);
-       highMidPeakFilter.process(context);
-        highShelfFilter.process(context);
+        const auto fid = static_cast<FxEffectId> (fxOrder[(size_t) step]);
+        switch (fid)
+        {
+            case FxEffectId::Eq:
+                if (! *apvts->getRawParameterValue ("eqBypass"))
+                {
+                    lowShelfFilter.process (context);
+                    lowMidPeakFilter.process (context);
+                    highMidPeakFilter.process (context);
+                    highShelfFilter.process (context);
+                }
+                break;
+            case FxEffectId::Comp:
+                if (! *apvts->getRawParameterValue ("compBypass"))
+                    comp.process (context);
+                break;
+            case FxEffectId::Saturator:
+                if (! *apvts->getRawParameterValue ("satBypass"))
+                    saturator.process (context);
+                break;
+            case FxEffectId::Reverb:
+                if (! *apvts->getRawParameterValue ("reverbBypass"))
+                    reverb.process (context);
+                break;
+            case FxEffectId::Chorus:
+                if (! *apvts->getRawParameterValue ("chorusBypass"))
+                    chorus.process (context);
+                break;
+            default:
+                break;
+        }
     }
-    //process compressor
-    if (!*apvts->getRawParameterValue("compBypass"))
-        comp.process(context);
-    //process saturator
-    if (! *apvts->getRawParameterValue("satBypass"))
-        saturator.process(context);
-    //process reverb
-    if (! *apvts->getRawParameterValue("reverbBypass"))
-        reverb.process(context);
-    //process chorus
-    if (! *apvts->getRawParameterValue("chorusBypass"))
-        chorus.process(context);
 
     const float dryAmt = 1.0f - mixWet;
     const float wetAmt = mixWet;
@@ -548,6 +612,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
 
     // Macro knob (0..1), drives mapped parameters via MacroController.
     layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
+
+    /** 0 … 119 = ordering of Eq,Comp,Sat,Chorus,Reverb. Default 1 = legacy built-in order Eq→Comp→Sat→Reverb→Chorus. */
+    layout.add(std::make_unique<juce::AudioParameterInt>(
+        juce::ParameterID { "fxChainOrder", 1 }, "FX Chain Order", 0, 119, 1));
 
     // Bypass switches for each module
     layout.add(std::make_unique<juce::AudioParameterBool>("eqBypass",      "EQ Bypass",      false));

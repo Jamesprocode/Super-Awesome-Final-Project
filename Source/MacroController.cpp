@@ -60,7 +60,8 @@ void MacroController::applyMacro (float macroValue)
             continue;
 
         const float shaped = std::pow (x, m.curve);
-        const float target = juce::jmap (shaped, m.minValue, m.maxValue);
+        const float normalized = m.inverted ? (1.0f - shaped) : shaped;
+        const float target = juce::jmap (normalized, m.minValue, m.maxValue);
         const auto& range = apvts.getParameterRange (m.targetParamID);
         const float clamped = juce::jlimit (range.start, range.end, target);
         param->setValueNotifyingHost (range.convertTo0to1 (clamped));

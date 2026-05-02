@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
 import { PowerIcon } from './PowerIcon.jsx'
 
-export function BypassToggle({ relayId, label = 'Bypass', showLabel = false, onBypassSynced }) {
+export function BypassToggle({
+  relayId,
+  label = 'Bypass',
+  showLabel = false,
+  onBypassSynced,
+  compact = false,
+}) {
   const [bypassOn, setBypassOn] = useState(false)
 
   useEffect(() => {
@@ -30,15 +36,19 @@ export function BypassToggle({ relayId, label = 'Bypass', showLabel = false, onB
     }
   }
 
+  const wrapCls = [
+    'safc-bypass-toggle',
+    compact && 'safc-bypass-toggle--compact',
+    showLabel && 'safc-bypass-toggle--labeled',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <span
-      className={
-        showLabel ? 'safc-bypass-toggle safc-bypass-toggle--labeled' : 'safc-bypass-toggle'
-      }
-    >
+    <span className={wrapCls}>
       <button
         type="button"
-        className={`safc-power-toggle ${bypassOn ? 'is-bypass-active' : ''}`}
+        className={`safc-power-toggle ${compact ? 'safc-power-toggle--compact' : ''} ${bypassOn ? 'is-bypass-active' : ''}`}
         aria-pressed={bypassOn}
         aria-label={label}
         title={bypassOn ? `${label}: on (bypassed)` : `${label}: off (active)`}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
 import { BypassToggle } from './BypassToggle.jsx'
+import { FxEffectChain } from './FxEffectChain.jsx'
 import { MacroRailSlider } from './MacroRailSlider.jsx'
 import './MacroKnob.css'
 
@@ -184,29 +185,31 @@ export function MacroKnob() {
 
       <div className="macro-knob-card">
 
-        <p className="macro-knob-hero-percent" aria-hidden>
-          {pctDisplay}%
-        </p>
+        <div className="macro-page__macro-top">
 
-        <div
-          ref={rootRef}
-          className="macro-knob"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          onDoubleClick={onDoubleClick}
-          role="slider"
-          id={id}
-          aria-label="Macro"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={pctDisplay}
-          aria-valuetext={`${pctDisplay} percent`}
-          tabIndex={0}
-        >
-        <div className="macro-knob-halo" aria-hidden />
-        <svg className="macro-knob-dial" viewBox="0 0 200 200" aria-hidden>
+          <p className="macro-knob-hero-percent macro-knob-hero-percent--macro-page" aria-hidden>
+            {pctDisplay}%
+          </p>
+
+          <div
+            ref={rootRef}
+            className="macro-knob macro-knob--macro-page"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            onDoubleClick={onDoubleClick}
+            role="slider"
+            id={id}
+            aria-label="Macro"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={pctDisplay}
+            aria-valuetext={`${pctDisplay} percent`}
+            tabIndex={0}
+          >
+            <div className="macro-knob-halo" aria-hidden />
+            <svg className="macro-knob-dial" viewBox="0 0 200 200" aria-hidden>
           <defs>
             <radialGradient id={`${fid}-face`} cx="32%" cy="28%" r="78%">
               <stop offset="0%" stopColor="#6366f1" />
@@ -284,7 +287,11 @@ export function MacroKnob() {
             <circle cx="100" cy="100" r="6" fill="#020617" stroke="#334155" strokeWidth={1} opacity={0.85} />
           </g>
         </svg>
+          </div>
         </div>
+
+        <FxEffectChain />
+
         <div className="macro-page__rail-row">
           <MacroRailSlider
             relayId="inputGain"

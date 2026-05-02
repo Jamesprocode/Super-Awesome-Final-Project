@@ -6,6 +6,14 @@ import { CollapsibleSection } from './CollapsibleSection.jsx'
 import { MacroRailSlider } from './MacroRailSlider.jsx'
 import { MiniMacroKnob } from './MiniMacroKnob.jsx'
 import { PowerIcon } from './PowerIcon.jsx'
+import {
+  FX_CHAIN_BLOCK_TITLE_BY_EFFECT_INDEX,
+  FX_CHAIN_RANK_MAX,
+  LEGACY_CHAIN_INDEX,
+  indexFromNormalised,
+  indexToPermutation,
+  normalisedFromIndex,
+} from './effectChainPermutation.js'
 
 /** Last edited min/max/curve while unmapped; survives toggling macro mapping within the SPA session */
 const globalMappingDrafts = new Map()
@@ -223,8 +231,10 @@ function MappedCountBadge({ count }) {
 
 export function MappingView() {
   const [state, setState] = useState({ blocks: [], mappings: [] })
-  /** Last fixed normalised slider value before mapping (restore on unmap) */
-  const fixedNormCache = useRef(new Map())
+  /** Rank of DSP effect chain (0 … 119); matches Macro FX strip + APVTS `fxChainOrder`. */
+  const [fxChainRank, setFxChainRank] = useState(LEGACY_CHAIN_INDEX)
+  /** Normalised snapshot taken only when attaching mapping — restored on unmap (immune to mount listener noise). */
+  const unmapRestoreSnapRef = useRef(new Map())
   const fetchState = useCallback(async () => {
     const fn = Juce.getNativeFunction?.('safc_getMappingStateJson')
     if (!fn) {
@@ -237,7 +247,15 @@ export function MappingView() {
     try {
       const raw = await fn()
       const text = typeof raw === 'string' ? raw : String(raw ?? '')
-      setState(JSON.parse(text))
+      const data = JSON.parse(text)
+      const fo = Number(data.fxChainOrder)
+      setState({
+        blocks: data.blocks ?? [],
+        mappings: data.mappings ?? [],
+        ...(Number.isFinite(fo)
+          ? { fxChainOrder: Math.max(0, Math.min(FX_CHAIN_RANK_MAX, Math.round(fo))) }
+          : {}),
+      })
     } catch {
       setState({ blocks: [], mappings: [] })
     }
@@ -252,6 +270,45 @@ export function MappingView() {
     window.addEventListener('safc:preset-loaded', handler)
     return () => window.removeEventListener('safc:preset-loaded', handler)
   }, [fetchState])
+
+  useEffect(() => {
+    const od = Number(state.fxChainOrder)
+    if (!Number.isFinite(od)) return undefined
+    setFxChainRank(Math.max(0, Math.min(FX_CHAIN_RANK_MAX, Math.round(od))))
+    return undefined
+  }, [state.fxChainOrder])
+
+  useEffect(() => {
+    const s = Juce.getSliderState?.('fxChainOrder')
+    if (!s) return undefined
+
+    const pull = () =>
+      setFxChainRank(
+        indexFromNormalised(s.getNormalisedValue?.() ?? normalisedFromIndex(LEGACY_CHAIN_INDEX)),
+      )
+    pull()
+    const lid = s.valueChangedEvent.addListener(pull)
+
+    return () => s.valueChangedEvent.removeListener(lid)
+  }, [])
+
+  const sortedBlocks = useMemo(() => {
+    const blocks = state.blocks ?? []
+    if (!blocks.length) return []
+
+    const perm = indexToPermutation(fxChainRank)
+    const posByTitle = new Map()
+    perm.forEach((effectIdx, chainSlot) => {
+      posByTitle.set(FX_CHAIN_BLOCK_TITLE_BY_EFFECT_INDEX[effectIdx], chainSlot)
+    })
+
+    return [...blocks].sort((a, b) => {
+      const da = posByTitle.has(a.title) ? posByTitle.get(a.title) : 999
+      const db = posByTitle.has(b.title) ? posByTitle.get(b.title) : 999
+      if (da !== db) return da - db
+      return String(a.title ?? '').localeCompare(String(b.title ?? ''))
+    })
+  }, [state.blocks, fxChainRank])
 
   const mappingsByTarget = useMemo(() => {
     const m = new Map()
@@ -284,12 +341,10 @@ export function MappingView() {
   return (
     <div className="safc-page safc-mapping-layout">
       <p className="safc-muted" style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        Map DSP parameters to the macro knob (green strip), or bypass each effect section. When a row
-        is unmapped, use the slider to set a fixed parameter value — your range and curve choices
-        are kept when toggling mapping. The teal dot shows the live value while mapped.
+        REPLACE THIS TEXT WITH THE NEW TEXT
       </p>
 
-      {(state.blocks || []).map((block) => {
+      {sortedBlocks.map((block) => {
         const mappedInBlock =
           block.params?.filter((p) => mappingsByTarget.has(p.id)).length ?? 0
         const bypassRelayId = BLOCK_TITLE_TO_BYPASS_RELAY[block.title]
@@ -321,7 +376,7 @@ export function MappingView() {
                 existing={mappingsByTarget.get(p.id)}
                 onMap={applyFn}
                 onUnmap={removeFn}
-                fixedNormCacheRef={fixedNormCache}
+                unmapRestoreSnapRef={unmapRestoreSnapRef}
               />
             ))}
           </CollapsibleSection>
@@ -344,7 +399,7 @@ function MappingRow({
   existing,
   onMap,
   onUnmap,
-  fixedNormCacheRef,
+  unmapRestoreSnapRef,
 }) {
   const mapped = Boolean(existing)
   const rMin = param.rangeMin
@@ -377,6 +432,11 @@ function MappingRow({
     if (draft && Number.isFinite(draft.curve)) return draft.curve
     return curveExponentToShapeId(existing?.curveExponent ?? 1)
   })
+  const [inverted, setInverted] = useState(() => {
+    const draft = globalMappingDrafts.get(param.id)
+    if (draft && draft.inverted != null) return Boolean(draft.inverted)
+    return Boolean(existing?.inverted)
+  })
 
   /** Live parameter value derived from slider relay norm (tracks macro while mapped). */
   const [relayNorm, setRelayNorm] = useState(null)
@@ -388,10 +448,12 @@ function MappingRow({
     setMinV(Math.min(lo, hi))
     setMaxV(Math.max(lo, hi))
     setCurveShape(curveExponentToShapeId(existing.curveExponent ?? 1))
+    setInverted(Boolean(existing.inverted))
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `existing` is a new object on every JSON fetch; compare fields only
   }, [
     existing?.curveExponent,
+    existing?.inverted,
     existing?.maxValue,
     existing?.minValue,
     existing?.targetParamID,
@@ -402,19 +464,35 @@ function MappingRow({
       min: minV,
       max: maxV,
       curve: curveShape,
+      inverted,
+
     })
-  }, [curveShape, maxV, minV, param.id])
+
+  }, [curveShape, inverted, maxV, minV, param.id])
 
   useEffect(() => {
+    if (isFreezeParam) {
+      const t = Juce.getToggleState?.(param.id)
+      if (!t) {
+        setRelayNorm(null)
+        return undefined
+      }
+      const sync = () => setRelayNorm(t.getValue() ? 1 : 0)
+      sync()
+      const lid = t.valueChangedEvent.addListener(sync)
+      return () => t.valueChangedEvent.removeListener(lid)
+    }
+
     const s = Juce.getSliderState?.(param.id)
     if (!s) {
       setRelayNorm(null)
       return undefined
     }
-    setRelayNorm(s.getNormalisedValue())
-    const lid = s.valueChangedEvent.addListener(() => setRelayNorm(s.getNormalisedValue()))
+    const syncSlider = () => setRelayNorm(s.getNormalisedValue())
+    syncSlider()
+    const lid = s.valueChangedEvent.addListener(syncSlider)
     return () => s.valueChangedEvent.removeListener(lid)
-  }, [param.id])
+  }, [isFreezeParam, param.id])
 
   const sortedMin = minV
   const sortedMax = maxV
@@ -426,61 +504,59 @@ function MappingRow({
       minValue: sortedMin,
       maxValue: sortedMax,
       curveShape,
+      inverted,
     })
-  }, [curveShape, onMap, param.id, sortedMax, sortedMin])
+
+  }, [curveShape, inverted, onMap, param.id, sortedMax, sortedMin])
 
   const handleRangeAdjust = useCallback((a, b) => {
     setMinV(Math.min(a, b))
     setMaxV(Math.max(a, b))
   }, [])
 
-  const readSliderNormSafe = () => {
+  /** Snapshot before entering mapped mode — bypasses corrupted cache after unmap (Relay listeners). */
+  const readNormSnapshotBeforeMap = () => {
     try {
+      if (isFreezeParam) {
+        const t = Juce.getToggleState?.(param.id)
+        if (!t?.getValue) return 0
+        return t.getValue() ? 1 : 0
+      }
       const s = Juce.getSliderState?.(param.id)
       if (!s?.getNormalisedValue) return 0.5
       const n = s.getNormalisedValue()
       return Number.isFinite(n) ? n : 0.5
     } catch {
-      return 0.5
+      return isFreezeParam ? 0 : 0.5
     }
   }
 
-  const onFreezeBypassSynced = useCallback(
-    (on) => {
-      fixedNormCacheRef.current.set(param.id, on ? 1 : 0)
-    },
-    [fixedNormCacheRef, param.id],
-  )
-
-  const onFixedSliderNormChange = useCallback(
-    (n) => {
-      if (!mapped) fixedNormCacheRef.current.set(param.id, n)
-    },
-    [fixedNormCacheRef, mapped, param.id],
-  )
-
   const handleTogglePower = () => {
-    const s = Juce.getSliderState?.(param.id)
     const nextMapped = !mapped
 
     if (nextMapped) {
-      fixedNormCacheRef.current.set(param.id, readSliderNormSafe())
+      unmapRestoreSnapRef.current.set(param.id, readNormSnapshotBeforeMap())
       void emitMap()
       return
     }
 
     void (async () => {
       await onUnmap(param.id)
-      const saved = fixedNormCacheRef.current.get(param.id)
-      if (saved !== undefined && s?.setNormalisedValue) {
-        requestAnimationFrame(() => {
-          try {
-            s.setNormalisedValue(saved)
-          } catch {
-            /* ignore */
+      const saved = unmapRestoreSnapRef.current.get(param.id)
+      if (saved === undefined) return
+      requestAnimationFrame(() => {
+        try {
+          if (isFreezeParam) {
+            const t = Juce.getToggleState?.(param.id)
+            if (t?.setValue) t.setValue(saved > 0.5)
+            return
           }
-        })
-      }
+          const s = Juce.getSliderState?.(param.id)
+          s?.setNormalisedValue?.(saved)
+        } catch {
+          /* ignore */
+        }
+      })
     })()
   }
 
@@ -489,30 +565,73 @@ function MappingRow({
     [bounds.lo, bounds.span],
   )
 
+  const currentValueDisplay =
+    relayNorm != null && Number.isFinite(relayNorm)
+      ? isFreezeParam
+        ? relayNorm >= 0.5
+          ? 'On'
+          : 'Off'
+        : currentScaledLive != null && Number.isFinite(currentScaledLive)
+          ? fmtMappingValue(currentScaledLive)
+          : '—'
+      : null
+
   return (
     <div className="safc-mapping-row">
       <div className="safc-mapping-row__header">
         <span className="safc-mapping-row__title">{param.label}</span>
-        <select
-          className="safc-select safc-mapping-row__curve"
-          value={curveShape}
-          disabled={isFreezeParam}
-          onChange={(e) => {
-            const next = Number(e.target.value)
-            setCurveShape(next)
-            if (mapped)
-              void onMap({
-                targetParamID: param.id,
-                minValue: sortedMin,
-                maxValue: sortedMax,
-                curveShape: next,
-              })
-          }}
-        >
-          <option value={1}>Linear</option>
-          <option value={2}>Logarithmic</option>
-          <option value={3}>Exponential</option>
-        </select>
+        {mapped ? (
+          <div className="safc-mapping-row__curve-tools">
+            <select
+              className="safc-select safc-mapping-row__curve"
+              value={curveShape}
+              disabled={isFreezeParam}
+              onChange={(e) => {
+                const next = Number(e.target.value)
+                setCurveShape(next)
+                void onMap({
+                  targetParamID: param.id,
+                  minValue: sortedMin,
+                  maxValue: sortedMax,
+                  curveShape: next,
+                  inverted,
+                })
+
+              }}
+
+            >
+              <option value={1}>Linear</option>
+
+
+              <option value={2}>Logarithmic</option>
+
+              <option value={3}>Exponential</option>
+            </select>
+            <label className="safc-mapping-row__invert">
+              <input
+                type="checkbox"
+                checked={inverted}
+                onChange={(e) => {
+                  const next = e.target.checked
+                  setInverted(next)
+                  void onMap({
+                    targetParamID: param.id,
+                    minValue: sortedMin,
+
+                    maxValue: sortedMax,
+                    curveShape,
+                    inverted: next,
+                  })
+
+
+                }}
+
+
+              />
+              Inverse
+            </label>
+          </div>
+        ) : null}
         <button
           type="button"
           className={`safc-power-toggle ${mapped ? 'is-on' : ''}`}
@@ -530,54 +649,68 @@ function MappingRow({
       <div className="safc-mapping-row__slider">
         {mapped ? (
           <>
-            <DoubleEndedMappingSlider
-              rangeMin={rMin}
-              rangeMax={rMax}
-              low={sortedMin}
-              high={sortedMax}
-              currentScaledValue={
-                currentScaledLive !== null && Number.isFinite(currentScaledLive)
-                  ? currentScaledLive
-                  : null
-              }
-              onAdjustRange={handleRangeAdjust}
-              onCommitRange={() => {
-                if (mapped) emitMap()
-              }}
-            />
-            {currentScaledLive != null && Number.isFinite(currentScaledLive) ? (
-              <div className="safc-mapping-row__live" aria-live="polite">
-                <span className="safc-muted">Live:</span>{' '}
-                <strong>{fmtMappingValue(currentScaledLive)}</strong>
+            <div className="safc-mapping-macro-rail-slot">
+              <DoubleEndedMappingSlider
+                rangeMin={rMin}
+                rangeMax={rMax}
+                low={sortedMin}
+                high={sortedMax}
+                currentScaledValue={
+                  currentScaledLive !== null && Number.isFinite(currentScaledLive)
+                    ? currentScaledLive
+                    : null
+                }
+                onAdjustRange={handleRangeAdjust}
+                onCommitRange={() => {
+                  if (mapped) emitMap()
+                }}
+              />
+            </div>
+            <div className="safc-mapping-row__value-row" aria-live="polite">
+              <div className="safc-mapping-row__current-slot">
+                <span className="safc-muted">Current Value:</span>{' '}
+                <strong className="safc-mapping-row__current-strong">
+                  {currentValueDisplay ?? '—'}
+                </strong>
               </div>
-            ) : null}
+              <div className="safc-mapping-row__mapped-range">
+                <span className="safc-muted">Mapped range:</span>{' '}
+                <span className="safc-mapping-row__numbers">
+                  {fmtMappingValue(sortedMin)} to {fmtMappingValue(sortedMax)}
+                </span>
+              </div>
+            </div>
           </>
         ) : isFreezeParam ? (
-          <div className="safc-mapping-row__freeze">
-            <BypassToggle
-              relayId="freeze"
-              label="Freeze"
-              showLabel
-              onBypassSynced={onFreezeBypassSynced}
-            />
-          </div>
+          <>
+            <div className="safc-mapping-row__freeze">
+              <BypassToggle relayId="freeze" label="Freeze" showLabel />
+            </div>
+            <div className="safc-mapping-row__under-slider" aria-live="polite">
+              <span className="safc-muted">Current Value:</span>{' '}
+              <strong className="safc-mapping-row__current-strong">
+                {currentValueDisplay ?? '—'}
+              </strong>
+            </div>
+          </>
         ) : (
-          <MacroRailSlider
-            relayId={param.id}
-            label="Fixed parameter value"
-            formatNormalized={(n) => formatFixedNorm(n)}
-            sensitivity={0.003}
-            resetNormalized={null}
-            onNormalisedChange={onFixedSliderNormChange}
-          />
-        )}
-        {!mapped ? null : (
-          <div className="safc-mapping-row__range-readout" aria-live="polite">
-            <span className="safc-muted">Mapped range:</span>{' '}
-            <span className="safc-mapping-row__numbers">
-              {fmtMappingValue(sortedMin)} to {fmtMappingValue(sortedMax)}
-            </span>
-          </div>
+          <>
+            <div className="safc-mapping-macro-rail-slot">
+              <MacroRailSlider
+                relayId={param.id}
+                showLabelRow={false}
+                formatNormalized={(n) => formatFixedNorm(n)}
+                sensitivity={0.003}
+                resetNormalized={null}
+              />
+            </div>
+            <div className="safc-mapping-row__under-slider" aria-live="polite">
+              <span className="safc-muted">Current Value:</span>{' '}
+              <strong className="safc-mapping-row__current-strong">
+                {currentValueDisplay ?? '—'}
+              </strong>
+            </div>
+          </>
         )}
       </div>
     </div>

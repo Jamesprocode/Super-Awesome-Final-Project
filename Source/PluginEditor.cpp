@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <vector>
@@ -18,7 +19,8 @@ constexpr const char* kSliderRelayIds[] = {
     "threshold", "ratio", "attack", "release",
     "preGain", "postGain",
     "lforate", "lfodepth", "centerdelay", "chorfeedback", "chormix",
-    "roomSize", "damping", "width", "wet", "dry"
+    "roomSize", "damping", "width", "wet", "dry",
+    "fxChainOrder",
 };
 
 constexpr const char* kToggleRelayIds[] = {
@@ -172,6 +174,11 @@ juce::String SuperAwesomeVocalChainAudioProcessorEditor::getMappingStateJson() c
     appendMappingBlocks (blocks, *audioProcessor.apvts);
     rootObj->setProperty ("blocks", juce::var (blocks));
 
+    if (auto* fxOrd = audioProcessor.apvts->getRawParameterValue ("fxChainOrder"))
+        rootObj->setProperty (
+            "fxChainOrder",
+            (int) std::lround ((double) fxOrd->load()));
+
     juce::Array<juce::var> mappings;
     if (audioProcessor.macroController != nullptr)
     {
@@ -182,6 +189,7 @@ juce::String SuperAwesomeVocalChainAudioProcessorEditor::getMappingStateJson() c
             mo->setProperty ("minValue", m.minValue);
             mo->setProperty ("maxValue", m.maxValue);
             mo->setProperty ("curveExponent", m.curve);
+            mo->setProperty ("inverted", m.inverted);
             mappings.add (juce::var (mo));
         }
     }
@@ -228,6 +236,7 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
                 nm.minValue = (float) obj->getProperty ("minValue");
                 nm.maxValue = (float) obj->getProperty ("maxValue");
                 nm.curve = curveExponentFromShapeId ((int) obj->getProperty ("curveShape"));
+                nm.inverted = obj->hasProperty ("inverted") && (bool) obj->getProperty ("inverted");
 
                 if (paramID.isNotEmpty() && audioProcessor.macroController != nullptr)
                 {
