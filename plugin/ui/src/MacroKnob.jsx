@@ -18,7 +18,7 @@ function formatDryWetNormalized(norm) {
   return `${p}%`
 }
 const kSweepDeg = 270
-const TRACK_R = 91
+const TRACK_R = 75
 /** Arc length along r=TRACK_R covering kSweepDeg of the circumference */
 const TRACK_ARC_LEN = (kSweepDeg / 360) * 2 * Math.PI * TRACK_R
 
@@ -164,23 +164,42 @@ export function MacroKnob() {
             <div className="macro-knob-halo" aria-hidden />
             <svg className="macro-knob-dial" viewBox="0 0 200 200" aria-hidden>
           <defs>
-            <radialGradient id={`${fid}-face`} cx="32%" cy="28%" r="78%">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="45%" stopColor="#4338ca" />
-              <stop offset="100%" stopColor="#1e1b4b" />
+            <radialGradient id={`${fid}-face`} cx="32%" cy="26%" r="80%">
+              <stop offset="0%" stopColor="#7c83ff" />
+              <stop offset="42%" stopColor="#4338ca" />
+              <stop offset="100%" stopColor="#13102e" />
             </radialGradient>
-            <linearGradient id={`${fid}-cap`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#64748b" />
-              <stop offset="55%" stopColor="#0f172a" />
-              <stop offset="100%" stopColor="#334155" />
+            <linearGradient id={`${fid}-cap`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#cbd5e1" />
+              <stop offset="40%" stopColor="#475569" />
+              <stop offset="100%" stopColor="#0b1226" />
             </linearGradient>
-            <radialGradient id={`${fid}-sheen`} cx="38%" cy="32%" r="55%">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.22} />
-              <stop offset="45%" stopColor="#c7d2fe" stopOpacity={0.06} />
+            <radialGradient id={`${fid}-cap-spec`} cx="35%" cy="22%" r="45%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.85} />
+              <stop offset="60%" stopColor="#ffffff" stopOpacity={0.08} />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+            </radialGradient>
+            <radialGradient id={`${fid}-sheen`} cx="30%" cy="22%" r="28%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity={0.28} />
+              <stop offset="55%" stopColor="#c7d2fe" stopOpacity={0.05} />
               <stop offset="100%" stopColor="#1e1b4b" stopOpacity={0} />
             </radialGradient>
+            <radialGradient id={`${fid}-vignette`} cx="50%" cy="50%" r="50%">
+              <stop offset="72%" stopColor="#000000" stopOpacity={0} />
+              <stop offset="100%" stopColor="#000000" stopOpacity={0.7} />
+            </radialGradient>
+            <linearGradient id={`${fid}-bezel`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#a5b4fc" />
+              <stop offset="50%" stopColor="#1e1b4b" />
+              <stop offset="100%" stopColor="#4338ca" />
+            </linearGradient>
+            <linearGradient id={`${fid}-pointer`} x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stopColor="#fef9c3" />
+              <stop offset="40%" stopColor="#e0e7ff" />
+              <stop offset="100%" stopColor="#3730a3" />
+            </linearGradient>
             <filter id={`${fid}-soft`} x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="0.85" result="b" />
+              <feGaussianBlur stdDeviation="0.6" result="b" />
               <feMerge>
                 <feMergeNode in="b" />
                 <feMergeNode in="SourceGraphic" />
@@ -188,63 +207,39 @@ export function MacroKnob() {
             </filter>
           </defs>
 
-          {/* Sweep track — aligned with SVG stroke origin per sector after rotate(-135) */}
-          <g className="macro-knob-static-bezel">
-            <circle
-              cx="100"
-              cy="100"
-              r={TRACK_R}
-              className="macro-knob-track-bg"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${TRACK_ARC_LEN} 999`}
-              transform="rotate(135 100 100)"
-            />
-            <circle
-              cx="100"
-              cy="100"
-              r={TRACK_R}
-              className="macro-knob-track-fill"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${TRACK_ARC_LEN * norm} 999`}
-              transform="rotate(135 100 100)"
-            />
-            {/* End-stop ticks (min / default / max) */}
-            <g stroke="#64748b" strokeWidth={2} strokeLinecap="round">
-              <line transform="rotate(-135 100 100)" x1="100" y1="7" x2="100" y2="17" />
-              <line transform="rotate(-90 100 100)" x1="100" y1="7" x2="100" y2="17" />
-              <line transform="rotate(-45 100 100)" x1="100" y1="7" x2="100" y2="17" />
-              <line transform="rotate(0 100 100)" x1="100" y1="7" x2="100" y2="17" />
-              <line transform="rotate(45 100 100)" x1="100" y1="7" x2="100" y2="17" />
-              <line transform="rotate(90 100 100)" x1="100" y1="7" x2="100" y2="17" />
-              <line transform="rotate(135 100 100)" x1="100" y1="7" x2="100" y2="17" />
-            </g>
-            <circle cx="100" cy="100" r="88" className="macro-knob-rim" fill="none" />
-          </g>
+          {/* Outer chrome bevel — heavier ring */}
+          <circle cx="100" cy="100" r="93" fill="none" stroke={`url(#${fid}-bezel)`} strokeWidth={5} />
 
-          {/* Rotating knob: face + glare + chunky pointer — rotation reads clearly */}
-          <g transform={`rotate(${rot} 100 100)`} className="macro-knob-spin">
-            <circle cx="100" cy="100" r="80" fill={`url(#${fid}-face)`} className="macro-knob-face" />
-            <circle cx="100" cy="100" r="74" fill={`url(#${fid}-sheen)`} />
-            <path
-              d="M100 42 L114 116 L86 116 Z"
-              className="macro-knob-pointer"
-              fill="#f8fafc"
-              stroke="#a5b4fc"
-              strokeWidth={1}
-              strokeLinejoin="round"
-              filter={`url(#${fid}-soft)`}
-            />
-            <circle cx="100" cy="100" r="11" fill={`url(#${fid}-cap)`} stroke="#94a3b8" strokeWidth={1} />
-            <circle cx="100" cy="100" r="6" fill="#020617" stroke="#334155" strokeWidth={1} opacity={0.85} />
-          </g>
+          {/* Face & sheen & vignette */}
+          <circle cx="100" cy="100" r="88" fill={`url(#${fid}-face)`} className="macro-knob-face" />
+          <circle cx="100" cy="100" r="88" fill={`url(#${fid}-sheen)`} />
+          <circle cx="100" cy="100" r="88" fill={`url(#${fid}-vignette)`} />
+
+          {/* Sweep track + fill arc (purple gradient) */}
+          <circle
+            cx="100"
+            cy="100"
+            r={TRACK_R}
+            className="macro-knob-track-bg"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${TRACK_ARC_LEN} 999`}
+            transform="rotate(135 100 100)"
+          />
+          <circle
+            cx="100"
+            cy="100"
+            r={TRACK_R}
+            className="macro-knob-track-fill"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${TRACK_ARC_LEN * norm} 999`}
+            transform="rotate(135 100 100)"
+          />
+
         </svg>
+          <span className="macro-knob__center-pct" aria-hidden>{pctDisplay}</span>
           </div>
-
-          <p className="macro-knob-hero-percent macro-knob-hero-percent--macro-page" aria-hidden>
-            {pctDisplay}%
-          </p>
           </div>
 
           <MacroRailSlider

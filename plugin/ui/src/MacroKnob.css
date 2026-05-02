@@ -285,16 +285,16 @@
 }
 
 .macro-knob-track-bg {
-  stroke: #1e293b;
-  stroke-width: 5;
-  opacity: 0.85;
+  stroke: #0b1128;
+  stroke-width: 8;
+  opacity: 0.95;
 }
 
 .macro-knob-track-fill {
-  stroke: #818cf8;
-  stroke-width: 5;
-  opacity: 0.95;
-  filter: drop-shadow(0 0 4px rgba(129, 140, 248, 0.45));
+  stroke: #a78bfa;
+  stroke-width: 8;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.6));
 }
 
 .macro-knob-rim {
@@ -421,6 +421,35 @@
 .macro-knob.macro-knob--macro-page {
   width: 15rem;
   padding: 0.4rem;
+}
+
+.macro-knob__center-pct {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.6rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(118deg, #c4b5fd 0%, #818cf8 35%, #6366f1 60%, #a78bfa 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(99, 102, 241, 0.45));
+  pointer-events: none;
+  user-select: none;
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .macro-knob__center-pct {
+    color: #c7d2fe;
+    background: none;
+    filter: none;
+  }
 }
 
 .macro-fx-chain {
