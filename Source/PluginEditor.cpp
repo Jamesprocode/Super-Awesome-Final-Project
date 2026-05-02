@@ -150,6 +150,7 @@ juce::String SuperAwesomeVocalChainAudioProcessorEditor::getMappingStateJson() c
             mo->setProperty ("minValue", m.minValue);
             mo->setProperty ("maxValue", m.maxValue);
             mo->setProperty ("curveExponent", m.curve);
+            mo->setProperty ("inverted", m.inverted);
             mappings.add (juce::var (mo));
         }
     }
@@ -196,6 +197,7 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
                 nm.minValue = (float) obj->getProperty ("minValue");
                 nm.maxValue = (float) obj->getProperty ("maxValue");
                 nm.curve = curveExponentFromShapeId ((int) obj->getProperty ("curveShape"));
+                nm.inverted = obj->hasProperty ("inverted") && (bool) obj->getProperty ("inverted");
 
                 if (paramID.isNotEmpty() && audioProcessor.macroController != nullptr)
                 {

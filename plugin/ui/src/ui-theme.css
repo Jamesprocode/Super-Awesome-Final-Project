@@ -274,6 +274,47 @@
   min-width: 9.5rem;
 }
 
+.safc-mapping-row__curve-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.safc-mapping-row__invert {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.safc-mapping-row__invert:focus-within {
+  outline: none;
+}
+
+.safc-mapping-row__invert:has(input:focus-visible) {
+  outline: 2px solid rgba(165, 180, 252, 0.75);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.safc-mapping-row__invert input[type='checkbox'] {
+  margin: 0;
+  accent-color: #818cf8;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
 .safc-mapping-row__slider {
   width: 100%;
   padding-left: 1.3rem;

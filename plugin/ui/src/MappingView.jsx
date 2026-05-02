@@ -429,6 +429,11 @@ function MappingRow({
     if (draft && Number.isFinite(draft.curve)) return draft.curve
     return curveExponentToShapeId(existing?.curveExponent ?? 1)
   })
+  const [inverted, setInverted] = useState(() => {
+    const draft = globalMappingDrafts.get(param.id)
+    if (draft && draft.inverted != null) return Boolean(draft.inverted)
+    return Boolean(existing?.inverted)
+  })
 
   /** Live parameter value derived from slider relay norm (tracks macro while mapped). */
   const [relayNorm, setRelayNorm] = useState(null)
@@ -440,10 +445,12 @@ function MappingRow({
     setMinV(Math.min(lo, hi))
     setMaxV(Math.max(lo, hi))
     setCurveShape(curveExponentToShapeId(existing.curveExponent ?? 1))
+    setInverted(Boolean(existing.inverted))
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `existing` is a new object on every JSON fetch; compare fields only
   }, [
     existing?.curveExponent,
+    existing?.inverted,
     existing?.maxValue,
     existing?.minValue,
     existing?.targetParamID,
@@ -454,8 +461,11 @@ function MappingRow({
       min: minV,
       max: maxV,
       curve: curveShape,
+      inverted,
+
     })
-  }, [curveShape, maxV, minV, param.id])
+
+  }, [curveShape, inverted, maxV, minV, param.id])
 
   useEffect(() => {
     if (isFreezeParam) {
@@ -491,8 +501,10 @@ function MappingRow({
       minValue: sortedMin,
       maxValue: sortedMax,
       curveShape,
+      inverted,
     })
-  }, [curveShape, onMap, param.id, sortedMax, sortedMin])
+
+  }, [curveShape, inverted, onMap, param.id, sortedMax, sortedMin])
 
   const handleRangeAdjust = useCallback((a, b) => {
     setMinV(Math.min(a, b))
@@ -565,26 +577,58 @@ function MappingRow({
     <div className="safc-mapping-row">
       <div className="safc-mapping-row__header">
         <span className="safc-mapping-row__title">{param.label}</span>
-        <select
-          className="safc-select safc-mapping-row__curve"
-          value={curveShape}
-          disabled={isFreezeParam}
-          onChange={(e) => {
-            const next = Number(e.target.value)
-            setCurveShape(next)
-            if (mapped)
-              void onMap({
-                targetParamID: param.id,
-                minValue: sortedMin,
-                maxValue: sortedMax,
-                curveShape: next,
-              })
-          }}
-        >
-          <option value={1}>Linear</option>
-          <option value={2}>Logarithmic</option>
-          <option value={3}>Exponential</option>
-        </select>
+        {mapped ? (
+          <div className="safc-mapping-row__curve-tools">
+            <select
+              className="safc-select safc-mapping-row__curve"
+              value={curveShape}
+              disabled={isFreezeParam}
+              onChange={(e) => {
+                const next = Number(e.target.value)
+                setCurveShape(next)
+                void onMap({
+                  targetParamID: param.id,
+                  minValue: sortedMin,
+                  maxValue: sortedMax,
+                  curveShape: next,
+                  inverted,
+                })
+
+              }}
+
+            >
+              <option value={1}>Linear</option>
+
+
+              <option value={2}>Logarithmic</option>
+
+              <option value={3}>Exponential</option>
+            </select>
+            <label className="safc-mapping-row__invert">
+              <input
+                type="checkbox"
+                checked={inverted}
+                onChange={(e) => {
+                  const next = e.target.checked
+                  setInverted(next)
+                  void onMap({
+                    targetParamID: param.id,
+                    minValue: sortedMin,
+
+                    maxValue: sortedMax,
+                    curveShape,
+                    inverted: next,
+                  })
+
+
+                }}
+
+
+              />
+              Inverse
+            </label>
+          </div>
+        ) : null}
         <button
           type="button"
           className={`safc-power-toggle ${mapped ? 'is-on' : ''}`}

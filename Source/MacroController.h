@@ -17,9 +17,10 @@
 struct MacroMapping
 {
     juce::String targetParamID;
-    float minValue;
-    float maxValue;
+    float minValue = 0;
+    float maxValue = 0;
     float curve = 1.0f;
+    bool inverted = false;
 };
 
 class MacroController : public juce::AudioProcessorValueTreeState::Listener
