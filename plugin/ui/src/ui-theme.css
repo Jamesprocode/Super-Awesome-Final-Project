@@ -1,6 +1,6 @@
 /* Shared “Macro-style” chrome for web views outside the rotary itself */
 .safc-page {
-  padding: 1.25rem 1.25rem 2rem;
+  padding: 1.25rem 1.25rem 0.75rem;
   width: 75%;
   margin: 0 auto;
   min-height: 100%;
@@ -22,7 +22,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   margin: 0;
-  padding: 0.85rem 1.1rem;
+  padding: 0.6rem 1.2rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.35);
 }
@@ -40,11 +40,9 @@
   color: #94a3b8;
 }
 
-.safc-preview-note {
-  margin-top: 0.75rem;
-  font-size: 0.78rem;
-  color: #fbbf24;
-  line-height: 1.4;
+.safc-tip {
+  font-size: 1.1rem;
+  color: #dcf2ff;
 }
 
 .safc-detail-grid {

@@ -340,8 +340,8 @@ export function MappingView() {
 
   return (
     <div className="safc-page safc-mapping-layout">
-      <p className="safc-muted" style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        REPLACE THIS TEXT WITH THE NEW TEXT
+      <p className="safc-tip" style={{ textAlign: 'center', marginBottom: '1rem' }}>
+        Fine-tune the effect of the macro knob by mapping parameters to the macro!
       </p>
 
       {sortedBlocks.map((block) => {
