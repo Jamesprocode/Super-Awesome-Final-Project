@@ -136,11 +136,6 @@ const std::vector<FactoryPreset>& getFactoryPresets()
 {
     static const std::vector<FactoryPreset> presets = {
         {
-            "Default",
-            {},
-            true,
-        },
-        {
             "Aggressive Vocal",
             {
                 // EQ - dual presence boost (low-mid 1k, high-mid 3k)
