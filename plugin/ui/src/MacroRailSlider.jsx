@@ -17,10 +17,72 @@ export function MacroRailSlider({
   sensitivity = 0.003,
   resetNormalized = null,
   orientation = 'horizontal',
+  /** 'input' | 'output' — when set, renders a live VU meter bar inside the rail. */
+  meterChannel = null,
   /** Optional: normalized 0–1 after user/JUCE commits */
   onNormalisedChange,
 }) {
   const isVertical = orientation === 'vertical'
+  const [meterNorm, setMeterNorm] = useState(0)
+
+  useEffect(() => {
+    if (!meterChannel) return undefined
+    const get = Juce.getNativeFunction?.('safc_getMeters')
+    if (!get) return undefined
+    let raf = 0
+    let cancelled = false
+    let inFlight = false
+    /** Linear peak we are currently displaying. */
+    let displayed = 0
+    /** Last raw peak received from C++. */
+    let lastSeenFromCpp = -1
+    /** Frames in a row where C++ value hasn't changed — proxy for "transport paused". */
+    let stableFrames = 0
+    let lastTs = performance.now()
+    const tick = (ts) => {
+      if (cancelled) return
+      const dt = Math.max(0, ts - lastTs) / 1000
+      lastTs = ts
+
+      if (!inFlight) {
+        inFlight = true
+        get().then((raw) => {
+          inFlight = false
+          if (cancelled) return
+          try {
+            const obj = JSON.parse(typeof raw === 'string' ? raw : String(raw ?? ''))
+            const peak = Number(obj?.[meterChannel]) || 0
+            if (peak === lastSeenFromCpp) {
+              stableFrames += 1
+            } else {
+              stableFrames = 0
+              lastSeenFromCpp = peak
+              displayed = peak
+            }
+          } catch {
+            /* ignore */
+          }
+        })
+      }
+
+      // Local decay only when C++ side appears frozen (transport paused).
+      if (stableFrames > 3) {
+        displayed = Math.max(0, displayed * Math.exp(-3.5 * dt))
+      }
+
+      // Linear dB → height: -60 dB → 0, 0 dBFS → 1.
+      const db = displayed > 1e-5 ? 20 * Math.log10(displayed) : -60
+      const clamped = Math.max(-60, Math.min(0, db))
+      setMeterNorm((clamped + 60) / 60)
+
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+    }
+  }, [meterChannel])
   const drag = useRef({
     active: false,
     lastX: 0,
@@ -56,48 +118,86 @@ export function MacroRailSlider({
 
   const setNormalised = useCallback((v) => {
     const x = Math.min(1, Math.max(0, v))
+    setNorm(x)
     if (drag.current.hasJuce && drag.current.slider) {
       drag.current.slider.setNormalisedValue(x)
     } else {
       drag.current.local = x
-      setNorm(x)
       onNormalisedChange?.(x)
     }
   }, [onNormalisedChange])
 
-  const onPointerDown = (e) => {
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    if (drag.current.slider) drag.current.slider.sliderDragStarted()
-    else drag.current.local = norm
-    drag.current.active = true
-    drag.current.lastX = e.clientX
-    drag.current.lastY = e.clientY
-  }
+  const railRef = useRef(null)
 
-  const onPointerMove = (e) => {
-    if (!drag.current.active) return
+  const positionFromEvent = useCallback((e) => {
+    const rail = railRef.current
+    if (!rail) return null
+    const rect = rail.getBoundingClientRect()
     if (isVertical) {
-      const dy = drag.current.lastY - e.clientY
-      drag.current.lastY = e.clientY
-      setNormalised(getValue() + dy * sensitivity)
-    } else {
-      const dx = e.clientX - drag.current.lastX
-      drag.current.lastX = e.clientX
-      setNormalised(getValue() + dx * sensitivity)
+      const t = (e.clientY - rect.top) / Math.max(rect.height, 1)
+      return Math.min(1, Math.max(0, 1 - t))
     }
-  }
+    const t = (e.clientX - rect.left) / Math.max(rect.width, 1)
+    return Math.min(1, Math.max(0, t))
+  }, [isVertical])
 
-  const onPointerUp = (e) => {
-    if (!drag.current.active) return
-    drag.current.active = false
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    } catch {
-      /* ignore */
+  // Imperative drag — attaches native mousedown / touchstart on the rail element.
+  useEffect(() => {
+    const rail = railRef.current
+    if (!rail) return undefined
+
+    const updateFromClient = (clientX, clientY) => {
+      const rect = rail.getBoundingClientRect()
+      let next
+      if (isVertical) {
+        const t = (clientY - rect.top) / Math.max(rect.height, 1)
+        next = Math.min(1, Math.max(0, 1 - t))
+      } else {
+        const t = (clientX - rect.left) / Math.max(rect.width, 1)
+        next = Math.min(1, Math.max(0, t))
+      }
+      setNormalised(next)
     }
-    if (drag.current.slider) drag.current.slider.sliderDragEnded()
-  }
+
+    const onMouseMove = (ev) => {
+      if (!drag.current.active) return
+      if (isVertical) {
+        updateFromClient(ev.clientX, ev.clientY)
+      } else {
+        const dx = ev.clientX - drag.current.lastX
+        drag.current.lastX = ev.clientX
+        setNormalised(getValue() + dx * sensitivity)
+      }
+    }
+    const onMouseUp = () => {
+      if (!drag.current.active) return
+      drag.current.active = false
+      if (drag.current.slider) drag.current.slider.sliderDragEnded()
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+    const onMouseDown = (ev) => {
+      ev.preventDefault()
+      if (drag.current.slider) drag.current.slider.sliderDragStarted()
+      drag.current.active = true
+      drag.current.lastX = ev.clientX
+      drag.current.lastY = ev.clientY
+      if (isVertical) updateFromClient(ev.clientX, ev.clientY)
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
+    }
+
+    rail.addEventListener('mousedown', onMouseDown)
+    return () => {
+      rail.removeEventListener('mousedown', onMouseDown)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [isVertical, sensitivity, setNormalised, getValue])
+
+  const onPointerDown = () => {}
+  const onPointerMove = () => {}
+  const onPointerUp = () => {}
 
   const onDoubleClick = (e) => {
     if (resetNormalized == null) return
@@ -123,10 +223,20 @@ export function MacroRailSlider({
     `macro-rail-slider ${isVertical ? 'macro-rail-slider--vertical' : ''}${narrowRail ? ' macro-rail-slider--narrow-rail' : ''}`.trim()
 
   if (isVertical) {
+    const verticalLabelRow =
+      label != null && String(label).length > 0 ? (
+        <div className="macro-rail-slider__labels">
+          <span className="macro-rail-slider__label">{label}</span>
+        </div>
+      ) : showLabelRow ? (
+        <div className="macro-rail-slider__labels macro-rail-slider__labels--spacer" aria-hidden />
+      ) : null
+
     return (
       <div className={rootCls} title={formatNormalized(norm)} onDoubleClick={onDoubleClick}>
-        {labelRow}
+        {verticalLabelRow}
         <div
+          ref={railRef}
           className="macro-rail-slider__rail"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -136,17 +246,26 @@ export function MacroRailSlider({
         >
           <div className="macro-rail-slider__rail-inner">
             <div className="macro-rail-slider__track-bg" aria-hidden />
-            <div
-              className="macro-rail-slider__track-fill"
-              style={{ height: `${norm * 100}%` }}
-              aria-hidden
-            />
+            {meterChannel ? (
+              <div
+                className="macro-rail-slider__meter-fill"
+                style={{ clipPath: `inset(${(1 - meterNorm) * 100}% 0 0 0)` }}
+                aria-hidden
+              />
+            ) : (
+              <div
+                className="macro-rail-slider__track-fill"
+                style={{ height: `${norm * 100}%` }}
+                aria-hidden
+              />
+            )}
           </div>
           <div
-            className="macro-rail-slider__thumb"
+            className="macro-rail-slider__thumb macro-rail-slider__thumb--pill"
             style={{ bottom: `${norm * 100}%` }}
-            aria-hidden
-          />
+          >
+            <span className="macro-rail-slider__thumb-value">{formatNormalized(norm)}</span>
+          </div>
         </div>
       </div>
     )

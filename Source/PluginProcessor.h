@@ -61,6 +61,10 @@ public:
 
     juce::String lastPresetName { "Default" };
 
+    /** Peak levels (linear 0..1) for input/output VU meters. Read on message thread, written on audio thread. */
+    std::atomic<float> meterInputPeak  { 0.0f };
+    std::atomic<float> meterOutputPeak { 0.0f };
+
 private:
     //==============================================================================
     // juce::AudioParameterFloat* roomSizeParam;

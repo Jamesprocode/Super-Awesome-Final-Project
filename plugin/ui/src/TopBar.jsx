@@ -11,7 +11,7 @@ const TABS = [
 export function TopBar({ tab, onTabChange }) {
   const presetSelectId = useId()
   const [presets, setPresets] = useState([])
-  const [selectedPreset, setSelectedPreset] = useState('Default')
+  const [selectedPreset, setSelectedPreset] = useState('')
 
   useEffect(() => {
     const list = Juce.getNativeFunction?.('safc_listPresets')
@@ -56,6 +56,14 @@ export function TopBar({ tab, onTabChange }) {
     window.dispatchEvent(new CustomEvent('safc:preset-loaded', { detail: { name } }))
   }, [])
 
+  const onReset = useCallback(async () => {
+    const reset = Juce.getNativeFunction?.('safc_resetAll')
+    if (!reset) return
+    await reset()
+    setSelectedPreset('')
+    window.dispatchEvent(new CustomEvent('safc:preset-loaded', { detail: { name: '' } }))
+  }, [])
+
   return (
     <header className="app-topbar">
       <div className="app-topbar__slot app-topbar__slot--left">
@@ -68,12 +76,21 @@ export function TopBar({ tab, onTabChange }) {
           value={selectedPreset}
           onChange={onPickPreset}
         >
+          <option value="">— Select —</option>
           {presets.map((p) => (
             <option key={p.name} value={p.name}>
               {p.name}
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          className="app-topbar__reset-btn"
+          onClick={onReset}
+          title="Reset all parameters and clear mappings"
+        >
+          Reset
+        </button>
       </div>
 
       <div className="app-topbar__slot app-topbar__slot--center">

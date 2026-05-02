@@ -135,6 +135,7 @@ export function MacroKnob() {
             resetNormalized={gainResetNorm}
             orientation="vertical"
             showFormattedValue
+            meterChannel="input"
           />
 
           <div className="macro-page__hero-center">
@@ -244,6 +245,7 @@ export function MacroKnob() {
             resetNormalized={gainResetNorm}
             orientation="vertical"
             showFormattedValue
+            meterChannel="output"
           />
         </div>
 

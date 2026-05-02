@@ -68,6 +68,34 @@
   box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
 }
 
+.app-topbar__reset-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(15, 23, 42, 0.8);
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.app-topbar__reset-btn:hover {
+  background: rgba(99, 102, 241, 0.18);
+  color: #e0e7ff;
+  border-color: #6366f1;
+}
+
+.app-topbar__reset-btn:focus-visible {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
+}
+
 .app-topbar__tabs {
   display: inline-flex;
   padding: 3px;

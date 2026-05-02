@@ -6,6 +6,8 @@
   ==============================================================================
 */
 
+// #TODO: add reset buttom instead of default; have preset store all parameter value and order of VST; and new design for the input output and dry wet slider
+
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -370,12 +372,31 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
 
     buffer.applyGain (juce::Decibels::decibelsToGain (inputDb));
 
+    // Post-trim input peak (signal entering DSP chain — reflects user's input gain).
+    {
+        float peak = 0.0f;
+        for (int ch = 0; ch < nCh; ++ch)
+            peak = juce::jmax (peak, buffer.getMagnitude (ch, 0, numSamples));
+        const float prev = meterInputPeak.load (std::memory_order_relaxed);
+        meterInputPeak.store (juce::jmax (peak, prev * 0.85f), std::memory_order_relaxed);
+    }
+
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
+
+    auto captureOutputPeak = [this, &buffer, nCh, numSamples]
+    {
+        float peak = 0.0f;
+        for (int ch = 0; ch < nCh; ++ch)
+            peak = juce::jmax (peak, buffer.getMagnitude (ch, 0, numSamples));
+        const float prev = meterOutputPeak.load (std::memory_order_relaxed);
+        meterOutputPeak.store (juce::jmax (peak, prev * 0.85f), std::memory_order_relaxed);
+    };
 
     if (bypassAllFx)
     {
         buffer.applyGain (juce::Decibels::decibelsToGain (outputDb));
+        captureOutputPeak();
         return;
     }
 
@@ -490,6 +511,7 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     }
 
     buffer.applyGain (juce::Decibels::decibelsToGain (outputDb));
+    captureOutputPeak();
 }
 
 
@@ -619,9 +641,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     // Macro knob (0..1), drives mapped parameters via MacroController.
     layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
 
-    /** 0 … 119 = ordering of Eq,Comp,Sat,Chorus,Reverb. Default 1 = legacy built-in order Eq→Comp→Sat→Reverb→Chorus. */
+    /** 0 … 119 = ordering of Eq,Comp,Sat,Chorus,Reverb. Default 0 = Eq→Comp→Sat→Chorus→Reverb. */
     layout.add(std::make_unique<juce::AudioParameterInt>(
-        juce::ParameterID { "fxChainOrder", 1 }, "FX Chain Order", 0, 119, 1));
+        juce::ParameterID { "fxChainOrder", 1 }, "FX Chain Order", 0, 119, 0));
 
     // Bypass switches for each module
     layout.add(std::make_unique<juce::AudioParameterBool>("eqBypass",      "EQ Bypass",      false));

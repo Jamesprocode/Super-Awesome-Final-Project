@@ -125,11 +125,18 @@ float curveExponentFromShapeId (int curveShapeId)
 }
 
 //==============================================================================
+struct ParamSnapshot
+{
+    juce::String paramID;
+    float value;
+};
+
 struct FactoryPreset
 {
     juce::String name;
     std::vector<MacroMapping> mappings;
-    bool resetParameters = false;
+    std::vector<ParamSnapshot> paramValues = {};
+    bool resetParameters = true;
 };
 
 const std::vector<FactoryPreset>& getFactoryPresets()
@@ -137,55 +144,49 @@ const std::vector<FactoryPreset>& getFactoryPresets()
     static const std::vector<FactoryPreset> presets = {
         {
             "Aggressive Vocal",
+            // Macro-driven mappings
             {
-                // EQ - dual presence boost (low-mid 1k, high-mid 3k)
-                { "lowMidFreq",  1000.0f, 1000.0f, 1.0f, false },
-                { "lowMidGain",     0.0f,    7.0f, 1.0f, false },
-                { "highMidFreq", 3000.0f, 3000.0f, 1.0f, false },
-                { "highMidGain",    0.0f,    9.0f, 1.0f, false },
-                // Compressor
-                { "threshold",      0.0f,  -24.0f, 1.0f, false },
-                { "ratio",          1.0f,    6.0f, 1.0f, false },
-                // Saturator with output compensation
-                { "preGain",        1.0f,    5.0f, 1.0f, false },
-                { "postGain",       0.2f,    1.0f, 1.0f, true  },
+                { "lowMidGain",  0.0f,    7.0f, 1.0f, false },
+                { "highMidGain", 0.0f,    9.0f, 1.0f, false },
+                { "threshold",   0.0f,  -24.0f, 1.0f, false },
+                { "ratio",       1.0f,    6.0f, 1.0f, false },
+                { "preGain",     1.0f,    5.0f, 1.0f, false },
+                { "postGain",    0.2f,    1.0f, 1.0f, true  },
             },
-            true,
+            // Static parameter snapshot
+            {
+                { "lowMidFreq",  1000.0f },
+                { "highMidFreq", 3000.0f },
+            },
         },
         {
             "Airy Vocal",
             {
-                // EQ - air shelf at 6k, presence at 3k, low shelf cut at 300
-                { "highFreq",    6000.0f, 6000.0f, 1.0f, false },
-                { "highGain",       0.0f,   10.0f, 1.0f, false },
-                { "highMidFreq", 3000.0f, 3000.0f, 1.0f, false },
-                { "highMidGain",    0.0f,    8.0f, 1.0f, false },
-                { "lowFreq",      300.0f,  300.0f, 1.0f, false },
-                { "lowGain",       -8.0f,    0.0f, 1.0f, true  },
-                // Reverb
-                { "wet",            0.0f,    1.0f, 1.0f, false },
-                { "roomSize",       0.2f,   0.55f, 1.0f, false },
+                { "highGain",    0.0f,  10.0f, 1.0f, false },
+                { "highMidGain", 0.0f,   8.0f, 1.0f, false },
+                { "lowGain",    -8.0f,   0.0f, 1.0f, true  },
+                { "wet",         0.0f,   1.0f, 1.0f, false },
+                { "roomSize",    0.2f,  0.55f, 1.0f, false },
             },
-            true,
+            {
+                { "highFreq",    6000.0f },
+                { "highMidFreq", 3000.0f },
+                { "lowFreq",      300.0f },
+            },
         },
         {
             "Fuzzy Vocal",
             {
-                // EQ
-                { "highGain",    -15.0f,  0.0f,  1.0f, true  },
-                { "highMidGain", -15.0f,  0.0f,  1.0f, true  },
-                { "lowMidGain",    0.0f,  6.0f,  1.0f, false },
-                // Reverb
-                { "wet",           0.1f,  0.5f,  1.0f, true  },
-                { "dry",           0.5f,  0.9f,  1.0f, false },
-                { "roomSize",      0.1f,  0.5f,  1.0f, true  },
-                { "damping",       0.1f,  0.5f,  1.0f, false },
-                // Saturator
-                { "preGain",       1.0f,  5.0f,  1.0f, false },
-                // Chorus
-                { "chormix",       0.0f,  0.33f, 1.0f, true  },
+                { "highGain",    -15.0f, 0.0f,  1.0f, true  },
+                { "highMidGain", -15.0f, 0.0f,  1.0f, true  },
+                { "lowMidGain",    0.0f, 6.0f,  1.0f, false },
+                { "wet",           0.1f, 0.5f,  1.0f, true  },
+                { "dry",           0.5f, 0.9f,  1.0f, false },
+                { "roomSize",      0.1f, 0.5f,  1.0f, true  },
+                { "damping",       0.1f, 0.5f,  1.0f, false },
+                { "preGain",       1.0f, 5.0f,  1.0f, false },
+                { "chormix",       0.0f, 0.33f, 1.0f, true  },
             },
-            true,
         },
     };
     return presets;
@@ -348,9 +349,19 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
             {
                 if (p.name == name)
                 {
+                    // Clear mappings first so subsequent resets/sets don't trigger
+                    // stale-mapping re-application via the macro listener.
+                    audioProcessor.macroController->setMappings ({});
+
                     if (p.resetParameters)
                         for (auto* param : audioProcessor.getParameters())
                             param->setValueNotifyingHost (param->getDefaultValue());
+
+                    for (const auto& pv : p.paramValues)
+                    {
+                        if (auto* rap = audioProcessor.apvts->getParameter (pv.paramID))
+                            rap->setValueNotifyingHost (rap->getNormalisableRange().convertTo0to1 (pv.value));
+                    }
 
                     audioProcessor.macroController->setMappings (p.mappings);
                     audioProcessor.lastPresetName = name;
@@ -359,6 +370,31 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
                 }
             }
             ok ({ false });
+        });
+
+    o = o.withNativeFunction (
+        juce::Identifier ("safc_getMeters"),
+        [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        {
+            auto* obj = new juce::DynamicObject();
+            obj->setProperty ("input",  (double) audioProcessor.meterInputPeak.load());
+            obj->setProperty ("output", (double) audioProcessor.meterOutputPeak.load());
+            ok ({ juce::JSON::toString (juce::var (obj), false) });
+        });
+
+    o = o.withNativeFunction (
+        juce::Identifier ("safc_resetAll"),
+        [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        {
+            // Clear mappings first so resetting `macro` doesn't trigger stale-mapping re-application.
+            if (audioProcessor.macroController != nullptr)
+                audioProcessor.macroController->setMappings ({});
+
+            for (auto* param : audioProcessor.getParameters())
+                param->setValueNotifyingHost (param->getDefaultValue());
+
+            audioProcessor.lastPresetName = {};
+            ok ({ true });
         });
 
    #if JUCE_WINDOWS
