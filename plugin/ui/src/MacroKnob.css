@@ -473,6 +473,7 @@
 
 .macro-rail-slider--vertical .macro-rail-slider__thumb--pill {
   position: absolute;
+  top: auto;
   bottom: 0;
   left: 50%;
   width: 4rem;
@@ -482,8 +483,10 @@
   padding: 0;
   transform: translate(-50%, 50%);
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.55);
-  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 60%, #94a3b8 100%);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.78) 0%, rgba(226, 232, 240, 0.7) 60%, rgba(148, 163, 184, 0.78) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   color: #0b1226;
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
   font-size: 0.78rem;

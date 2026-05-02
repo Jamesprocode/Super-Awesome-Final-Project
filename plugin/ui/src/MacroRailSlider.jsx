@@ -141,59 +141,37 @@ export function MacroRailSlider({
     return Math.min(1, Math.max(0, t))
   }, [isVertical])
 
-  // Imperative drag — attaches native mousedown / touchstart on the rail element.
-  useEffect(() => {
-    const rail = railRef.current
-    if (!rail) return undefined
+  // Drag handler: window-level mousemove/mouseup, imperative coords via refs.
+  // We update React state via setNormalised on every move so the thumb visually tracks.
+  const onMouseDown = (e) => {
+    e.preventDefault()
+    if (drag.current.slider) drag.current.slider.sliderDragStarted()
+    else drag.current.local = norm
+    drag.current.active = true
+    drag.current.lastX = e.clientX
+    drag.current.lastY = e.clientY
 
-    const updateFromClient = (clientX, clientY) => {
-      const rect = rail.getBoundingClientRect()
-      let next
-      if (isVertical) {
-        const t = (clientY - rect.top) / Math.max(rect.height, 1)
-        next = Math.min(1, Math.max(0, 1 - t))
-      } else {
-        const t = (clientX - rect.left) / Math.max(rect.width, 1)
-        next = Math.min(1, Math.max(0, t))
-      }
-      setNormalised(next)
-    }
-
-    const onMouseMove = (ev) => {
+    const handleMove = (ev) => {
       if (!drag.current.active) return
       if (isVertical) {
-        updateFromClient(ev.clientX, ev.clientY)
+        const dy = drag.current.lastY - ev.clientY
+        drag.current.lastY = ev.clientY
+        setNormalised(getValue() + dy * sensitivity)
       } else {
         const dx = ev.clientX - drag.current.lastX
         drag.current.lastX = ev.clientX
         setNormalised(getValue() + dx * sensitivity)
       }
     }
-    const onMouseUp = () => {
-      if (!drag.current.active) return
+    const handleUp = () => {
       drag.current.active = false
       if (drag.current.slider) drag.current.slider.sliderDragEnded()
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
     }
-    const onMouseDown = (ev) => {
-      ev.preventDefault()
-      if (drag.current.slider) drag.current.slider.sliderDragStarted()
-      drag.current.active = true
-      drag.current.lastX = ev.clientX
-      drag.current.lastY = ev.clientY
-      if (isVertical) updateFromClient(ev.clientX, ev.clientY)
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', onMouseUp)
-    }
-
-    rail.addEventListener('mousedown', onMouseDown)
-    return () => {
-      rail.removeEventListener('mousedown', onMouseDown)
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
-  }, [isVertical, sensitivity, setNormalised, getValue])
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
+  }
 
   const onPointerDown = () => {}
   const onPointerMove = () => {}
@@ -238,10 +216,7 @@ export function MacroRailSlider({
         <div
           ref={railRef}
           className="macro-rail-slider__rail"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+          onMouseDown={onMouseDown}
           role="presentation"
         >
           <div className="macro-rail-slider__rail-inner">
