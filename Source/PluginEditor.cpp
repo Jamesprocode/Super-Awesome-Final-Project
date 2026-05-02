@@ -123,6 +123,45 @@ float curveExponentFromShapeId (int curveShapeId)
 }
 
 //==============================================================================
+struct FactoryPreset
+{
+    juce::String name;
+    std::vector<MacroMapping> mappings;
+    bool resetParameters = false;
+};
+
+const std::vector<FactoryPreset>& getFactoryPresets()
+{
+    static const std::vector<FactoryPreset> presets = {
+        {
+            "Default",
+            {},
+            true,
+        },
+        {
+            "Aggressive Vocal",
+            {
+                { "threshold",   0.0f, -24.0f, 1.0f },
+                { "ratio",       1.0f,   6.0f, 1.0f },
+                { "preGain",     1.0f,   3.0f, 1.0f },
+                { "highMidGain", 0.0f,   4.0f, 1.0f },
+                { "wet",         0.1f,   0.4f, 1.0f },
+            }
+        },
+        {
+            "Airy Vocal",
+            {
+                { "highGain",    0.0f,  5.0f, 1.0f },
+                { "highMidGain", 0.0f,  2.5f, 1.0f },
+                { "roomSize",    0.2f,  0.55f, 1.0f },
+                { "preGain",     1.0f,  1.6f, 1.0f },
+            }
+        },
+    };
+    return presets;
+}
+
+//==============================================================================
 } // namespace
 
 //==============================================================================
@@ -235,6 +274,48 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
                 audioProcessor.macroController->setMappings (std::move (mappings));
             }
             ok ({ true });
+        });
+
+    o = o.withNativeFunction (
+        juce::Identifier ("safc_listPresets"),
+        [] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        {
+            juce::Array<juce::var> arr;
+            for (const auto& p : getFactoryPresets())
+            {
+                auto* obj = new juce::DynamicObject();
+                obj->setProperty ("name", p.name);
+                obj->setProperty ("builtIn", true);
+                arr.add (juce::var (obj));
+            }
+            ok ({ juce::JSON::toString (juce::var (arr), true) });
+        });
+
+    o = o.withNativeFunction (
+        juce::Identifier ("safc_loadPreset"),
+        [this] (const juce::Array<juce::var>& args, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        {
+            if (args.isEmpty() || audioProcessor.macroController == nullptr)
+            {
+                ok ({ false });
+                return;
+            }
+
+            const auto name = args[0].toString();
+            for (const auto& p : getFactoryPresets())
+            {
+                if (p.name == name)
+                {
+                    if (p.resetParameters)
+                        for (auto* param : audioProcessor.getParameters())
+                            param->setValueNotifyingHost (param->getDefaultValue());
+
+                    audioProcessor.macroController->setMappings (p.mappings);
+                    ok ({ true });
+                    return;
+                }
+            }
+            ok ({ false });
         });
 
    #if JUCE_WINDOWS

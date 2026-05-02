@@ -247,6 +247,12 @@ export function MappingView() {
     void fetchState()
   }, [fetchState])
 
+  useEffect(() => {
+    const handler = () => void fetchState()
+    window.addEventListener('safc:preset-loaded', handler)
+    return () => window.removeEventListener('safc:preset-loaded', handler)
+  }, [fetchState])
+
   const mappingsByTarget = useMemo(() => {
     const m = new Map()
     for (const row of state.mappings || []) {

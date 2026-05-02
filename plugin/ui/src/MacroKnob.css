@@ -11,6 +11,43 @@
   z-index: 12;
 }
 
+.macro-page__preset-bar {
+  position: absolute;
+  top: 0.6rem;
+  left: max(1rem, 2vw);
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.macro-page__preset-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.macro-page__preset-select {
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  outline: none;
+}
+
+.macro-page__preset-select:focus-visible {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
+}
+
 .macro-page__toolbar-bypass {
   display: inline-flex;
   align-items: center;

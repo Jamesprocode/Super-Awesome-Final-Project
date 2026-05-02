@@ -28,16 +28,6 @@ SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
 
     macroController = std::make_unique<MacroController>(*apvts, "macro");
 
-    //Default macro mapping: a "Clean -> Aggressive" vocal preset.
-    //Replace / extend via macroController->setMappings(...) from the UI.
-    macroController->setMappings({
-        { "threshold",   0.0f,  -24.0f, 1.0f },
-        { "ratio",       1.0f,    6.0f, 1.0f },
-        { "preGain",     1.0f,    3.0f, 1.0f },
-        { "highMidGain", 0.0f,    4.0f, 1.0f },
-        { "wet",         0.1f,    0.4f, 1.0f },
-    });
-
     listener = std::make_unique<ParameterListener>(
         eqNeedsUpdate,
         compNeedsUpdate,
@@ -453,15 +443,57 @@ juce::AudioProcessorEditor* SuperAwesomeVocalChainAudioProcessor::createEditor()
 //==============================================================================
 void SuperAwesomeVocalChainAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    juce::ValueTree root ("SAFCState");
+    root.appendChild (apvts->copyState(), nullptr);
+
+    juce::ValueTree mappingsVT ("MacroMappings");
+    if (macroController != nullptr)
+    {
+        for (const auto& m : macroController->getMappings())
+        {
+            juce::ValueTree mvt ("Mapping");
+            mvt.setProperty ("targetParamID", m.targetParamID, nullptr);
+            mvt.setProperty ("minValue",      m.minValue,      nullptr);
+            mvt.setProperty ("maxValue",      m.maxValue,      nullptr);
+            mvt.setProperty ("curve",         m.curve,         nullptr);
+            mappingsVT.appendChild (mvt, nullptr);
+        }
+    }
+    root.appendChild (mappingsVT, nullptr);
+
+    if (auto xml = root.createXml())
+        copyXmlToBinary (*xml, destData);
 }
 
 void SuperAwesomeVocalChainAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    auto xml = getXmlFromBinary (data, sizeInBytes);
+    if (xml == nullptr) return;
+
+    auto root = juce::ValueTree::fromXml (*xml);
+    if (! root.isValid()) return;
+
+    auto apvtsState = root.getChildWithName (apvts->state.getType());
+    if (apvtsState.isValid())
+        apvts->replaceState (apvtsState);
+
+    if (macroController == nullptr) return;
+
+    auto mappingsVT = root.getChildWithName ("MacroMappings");
+    if (! mappingsVT.isValid()) return;
+
+    std::vector<MacroMapping> mappings;
+    for (auto child : mappingsVT)
+    {
+        if (! child.hasType ("Mapping")) continue;
+        MacroMapping m;
+        m.targetParamID = child.getProperty ("targetParamID").toString();
+        m.minValue      = (float) child.getProperty ("minValue");
+        m.maxValue      = (float) child.getProperty ("maxValue");
+        m.curve         = (float) child.getProperty ("curve");
+        mappings.push_back (m);
+    }
+    macroController->setMappings (std::move (mappings));
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioProcessor::createParameterLayout()
@@ -493,7 +525,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat> ("roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.33f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
 
@@ -508,11 +540,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat>("lfodepth", "Depth", 0.0f, 1.0f, 0.25f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("centerdelay", "Center Delay", 1.0f, 25.0f, 10.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("chorfeedback", "Feedback", -1.0f, 1.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("chormix", "Mix", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("chormix", "Mix", 0.0f, 1.0f, 0.0f));
 
     //Create parameters for Saturator
     layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 1.0f, 1.0f));
 
     // Macro knob (0..1), drives mapped parameters via MacroController.
     layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
