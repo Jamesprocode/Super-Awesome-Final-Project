@@ -68,7 +68,7 @@ export function MiniMacroKnob() {
 
   const onPointerMove = (e) => {
     if (!drag.current.active) return
-    const dy = drag.current.lastY - e.clientY
+    const dy = e.clientY - drag.current.lastY
     drag.current.lastY = e.clientY
     const next = getValue() - dy * 0.004
     setNormalised(next)

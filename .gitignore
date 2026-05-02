@@ -4,6 +4,3 @@
 
 # macOS
 .DS_Store
-
-# Local one-shot runner (not tracked)
-run.sh

@@ -2,17 +2,45 @@
 
 **Author(s):** Angela Branchek, Rafael Collado, Binyue Deng, JD Harris, Jiayi Wang
 
+----------------
+
 ## NEW USER BUILD SETUP:
-`npm install`
+
+### **EASIEST** from the repo root in Terminal (MacOS) / WSL (Windows) :
+
+`chmod +x run.sh` (first time only, if Git did not preserve the executable bit)
+
+`./run.sh`
+
+### **MANUAL (same stages as `./run.sh`)** from the repo root :
+
+`cd plugin/ui`; 
+
+`npm install` 
+
+`npm run build`
 
 `cmake -S . -B build`
 
 `cmake --build build --config Debug`
 
+Then launch the **Standalone**: 
+
+- macOS: 
+
 `open "build/SAFProject_artefacts/Debug/Standalone/Super Awesome Vocal Chain.app"`
 
-Then, rescan plugins in your DAW to use Super Awesome Vocal Chain!
+- Windows: 
 
+double‑click or run **`…\Standalone\Super Awesome Vocal Chain.exe`**
+
+- Linux: 
+
+run the **`Super Awesome Vocal Chain`** binary in the **`Standalone`** subfolder inside **`build/SAFProject_artefacts/…`**.
+
+**Then, rescan plugins in your DAW to use Super Awesome Vocal Chain!**
+
+----------------
 
 ## README
 ## 1. Summary
