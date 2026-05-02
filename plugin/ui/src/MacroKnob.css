@@ -31,8 +31,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
   min-height: 100%;
-  padding: 2.95rem 1.25rem 2.25rem;
+  padding: 2.1rem 1.25rem 1.95rem;
   text-align: center;
 }
 
@@ -56,6 +57,18 @@
   align-items: baseline;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
+  min-height: 1.125rem;
+}
+
+/** Reserves macro label row height so mapping rows align with `.safc-range-double` spacer */
+.macro-rail-slider__labels--spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.macro-rail-slider__labels--spacer::after {
+  content: '\00a0';
+  font-size: 0.72rem;
 }
 
 .macro-rail-slider__label {
@@ -242,4 +255,133 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   color: #a5b4fc;
+}
+
+/* Macro page hero + draggable effect chain */
+.macro-page__macro-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.macro-knob-hero-percent--macro-page {
+  margin: 0;
+  padding: 0.05rem 0 0;
+  font-size: 5rem;
+  line-height: 0.92;
+}
+
+.macro-knob.macro-knob--macro-page {
+  width: 15rem;
+  padding: 0.42rem;
+}
+
+.macro-fx-chain {
+  box-sizing: border-box;
+  width: 782px;
+  margin: 0.15rem auto 0.25rem;
+  padding: 0.55rem 0.85rem 0.65rem;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.32));
+}
+
+.macro-fx-chain__head {
+  text-align: left;
+}
+
+.macro-fx-chain__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.macro-fx-chain__hint {
+  margin: 0.18rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.macro-fx-chain__list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.macro-fx-chain__slot {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.macro-fx-chain__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.32rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  background: radial-gradient(circle at 30% 20%, rgba(55, 48, 163, 0.55), rgba(15, 23, 42, 0.95));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+
+.macro-fx-chain__pill:active {
+  cursor: grabbing;
+}
+
+.macro-fx-chain__grip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.macro-fx-chain__label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #e2e8f0;
+}
+
+.macro-fx-chain__bypass-slot {
+  display: flex;
+  align-items: center;
+}
+
+.macro-fx-chain__arrow {
+  margin-left: 0.15rem;
+  margin-right: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(100, 116, 139, 0.9);
+}
+
+.safc-bypass-toggle--compact {
+  gap: 0;
+}
+
+.safc-power-toggle--compact {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-width: 1.5px;
+}
+
+.safc-power-toggle--compact svg {
+  width: 13px;
+  height: 13px;
 }

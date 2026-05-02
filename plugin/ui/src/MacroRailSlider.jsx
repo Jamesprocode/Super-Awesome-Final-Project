@@ -9,6 +9,7 @@ import './MacroKnob.css'
 export function MacroRailSlider({
   relayId,
   label,
+  showLabelRow = true,
   formatNormalized,
   sensitivity = 0.003,
   resetNormalized = null,
@@ -91,16 +92,18 @@ export function MacroRailSlider({
     setNormalised(resetNormalized)
   }
 
-  const valueText = formatNormalized(norm)
-
-  return (
-    <div className="macro-rail-slider" onDoubleClick={onDoubleClick}>
+  const labelRow =
+    label != null && String(label).length > 0 ? (
       <div className="macro-rail-slider__labels">
         <span className="macro-rail-slider__label">{label}</span>
-        <span className="macro-rail-slider__value" aria-hidden="true">
-          {valueText}
-        </span>
       </div>
+    ) : showLabelRow ? (
+      <div className="macro-rail-slider__labels macro-rail-slider__labels--spacer" aria-hidden />
+    ) : null
+
+  return (
+    <div className="macro-rail-slider" title={formatNormalized(norm)} onDoubleClick={onDoubleClick}>
+      {labelRow}
       <div
         className="macro-rail-slider__rail"
         onPointerDown={onPointerDown}

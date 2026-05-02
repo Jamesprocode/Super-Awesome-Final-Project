@@ -1,7 +1,7 @@
 /* Shared “Macro-style” chrome for web views outside the rotary itself */
 .safc-page {
   padding: 1.25rem 1.25rem 2rem;
-  max-width: 75%;
+  width: 75%;
   margin: 0 auto;
   min-height: 100%;
 }
@@ -280,14 +280,47 @@
   padding-right: 1.3rem;
 }
 
-.safc-mapping-row__range-readout {
+/** Same macro-rail footprint for single + double sliders (avoid layout jump when toggling map) */
+.safc-mapping-macro-rail-slot {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.safc-mapping-row__value-row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem 0.75rem;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
   margin-top: 0.42rem;
-  font-size: 1.2rem;
+  font-size: 0.92rem;
   line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.safc-mapping-row__current-slot {
+  flex: 1 1 auto;
+  min-width: min(14rem, 100%);
+}
+
+.safc-mapping-row__mapped-range {
+  flex: 0 1 auto;
+  margin-left: auto;
+  text-align: right;
+}
+
+.safc-mapping-row__under-slider {
+  margin-top: 0.42rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.safc-mapping-row__current-strong {
+  font-weight: 600;
+  color: #a5f3fc;
 }
 
 .safc-mapping-row__numbers {
@@ -299,13 +332,20 @@
 
 .safc-range-double {
   width: 100%;
-  margin-top: 0.05rem;
+  margin-top: 0;
+}
+
+/* Mirrors `.macro-rail-slider__rail` outer height (34px) + label gap from macro rail sliders */
+.safc-range-double__label-spacer {
+  min-height: 1.125rem;
+  margin-bottom: 0.4rem;
 }
 
 .safc-range-double__track {
   position: relative;
-  height: 2rem;
+  height: 34px;
   width: 100%;
+  border-radius: 999px;
   cursor: ew-resize;
   touch-action: none;
 }
@@ -315,18 +355,19 @@
   left: 0;
   right: 0;
   top: 50%;
-  height: 0.42rem;
+  height: 10px;
   transform: translateY(-50%);
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
   pointer-events: none;
 }
 
 .safc-range-double__fill {
   position: absolute;
   top: 50%;
-  height: 0.42rem;
+  height: 10px;
   transform: translateY(-50%);
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(52, 211, 153, 0.35), rgba(34, 197, 94, 0.65));
@@ -337,10 +378,9 @@
 .safc-range-double__thumb {
   position: absolute;
   top: 50%;
-  width: 1.05rem;
-  height: 1.05rem;
-  margin-left: -0.525rem;
-  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f8fafc, #94a3b8);
   border: 2px solid #22c55e;
@@ -423,8 +463,6 @@
 
 .safc-mapping-layout {
   box-sizing: border-box;
-  /* Space so last collapsible rows stay above the fixed macro dock */
-  padding-bottom: 9.5rem;
 }
 
 .safc-range-double__marker {
@@ -441,12 +479,6 @@
     0 2px 4px rgba(0, 0, 0, 0.4);
   pointer-events: none;
   z-index: 3;
-}
-
-.safc-mapping-row__live {
-  margin-top: 0.42rem;
-  font-size: 0.92rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .safc-mapping-row__freeze {

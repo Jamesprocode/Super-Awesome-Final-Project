@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <vector>
@@ -18,7 +19,8 @@ constexpr const char* kSliderRelayIds[] = {
     "threshold", "ratio", "attack", "release",
     "preGain", "postGain",
     "lforate", "lfodepth", "centerdelay", "chorfeedback", "chormix",
-    "roomSize", "damping", "width", "wet", "dry"
+    "roomSize", "damping", "width", "wet", "dry",
+    "fxChainOrder",
 };
 
 constexpr const char* kToggleRelayIds[] = {
@@ -132,6 +134,11 @@ juce::String SuperAwesomeVocalChainAudioProcessorEditor::getMappingStateJson() c
     juce::Array<juce::var> blocks;
     appendMappingBlocks (blocks, *audioProcessor.apvts);
     rootObj->setProperty ("blocks", juce::var (blocks));
+
+    if (auto* fxOrd = audioProcessor.apvts->getRawParameterValue ("fxChainOrder"))
+        rootObj->setProperty (
+            "fxChainOrder",
+            (int) std::lround ((double) fxOrd->load()));
 
     juce::Array<juce::var> mappings;
     if (audioProcessor.macroController != nullptr)
