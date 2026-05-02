@@ -31,11 +31,6 @@ function sanitizeSvgFragmentId(reactId) {
   return `mk-${slug || 'knob'}`
 }
 
-/** Pointer angle from value: 270° sweep, 7 o'clock → 5 o'clock style (matching vertical-drag plugins). */
-function pointerDeg(normalised01) {
-  return -135 + normalised01 * kSweepDeg
-}
-
 /**
  * 0..1 macro control bound to JUCE WebSliderRelay "macro" and APVTS "macro".
  * In `npm run dev` (no JUCE), uses local state only.
@@ -117,7 +112,6 @@ export function MacroKnob() {
     setNormalised(kReset)
   }
 
-  const rot = pointerDeg(norm)
   const fid = sanitizeSvgFragmentId(id)
 
   const pctDisplay = pctFromNorm(norm)
@@ -140,6 +134,7 @@ export function MacroKnob() {
             formatNormalized={formatGainNormalized}
             resetNormalized={gainResetNorm}
             orientation="vertical"
+            showFormattedValue
           />
 
           <div className="macro-page__hero-center">
@@ -248,18 +243,21 @@ export function MacroKnob() {
             formatNormalized={formatGainNormalized}
             resetNormalized={gainResetNorm}
             orientation="vertical"
+            showFormattedValue
           />
         </div>
 
         <FxEffectChain />
 
-        <div className="macro-page__rail-row">
+        <div className="macro-page__rail-row macro-page__rail-row--wet-only">
           <MacroRailSlider
             relayId="outputDryWet"
             label="Dry / wet output"
             formatNormalized={formatDryWetNormalized}
             sensitivity={0.004}
             resetNormalized={1}
+            showFormattedValue
+            narrowRail
           />
         </div>
       </div>

@@ -11,6 +11,8 @@ export function MacroRailSlider({
   relayId,
   label,
   showLabelRow = true,
+  showFormattedValue = false,
+  narrowRail = false,
   formatNormalized,
   sensitivity = 0.003,
   resetNormalized = null,
@@ -107,12 +109,18 @@ export function MacroRailSlider({
     label != null && String(label).length > 0 ? (
       <div className="macro-rail-slider__labels">
         <span className="macro-rail-slider__label">{label}</span>
+        {showFormattedValue ? (
+          <span className="macro-rail-slider__value" aria-hidden="true">
+            {formatNormalized(norm)}
+          </span>
+        ) : null}
       </div>
     ) : showLabelRow ? (
       <div className="macro-rail-slider__labels macro-rail-slider__labels--spacer" aria-hidden />
     ) : null
 
-  const rootCls = `macro-rail-slider ${isVertical ? 'macro-rail-slider--vertical' : ''}`
+  const rootCls =
+    `macro-rail-slider ${isVertical ? 'macro-rail-slider--vertical' : ''}${narrowRail ? ' macro-rail-slider--narrow-rail' : ''}`.trim()
 
   if (isVertical) {
     return (

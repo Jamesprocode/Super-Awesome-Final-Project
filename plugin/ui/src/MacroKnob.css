@@ -122,6 +122,16 @@
   max-width: min(48rem, 100%);
 }
 
+.macro-page__rail-row--wet-only {
+  justify-content: center;
+}
+
+.macro-rail-slider--narrow-rail {
+  flex: 0 1 50%;
+  max-width: min(22rem, 50%);
+  min-width: unset;
+}
+
 .macro-rail-slider {
   flex: 1 1 min(13rem, 100%);
   min-width: min(13rem, 100%);
@@ -157,7 +167,7 @@
 
 .macro-rail-slider__value {
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
-  font-size: 0.74rem;
+  font-size: 0.9em;
   color: #a5b4fc;
   font-variant-numeric: tabular-nums;
 }
@@ -318,19 +328,16 @@
   filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
 }
 
+.macro-knob.macro-knob--compact .macro-knob__center-pct {
+  font-size: 1.55rem;
+  filter: drop-shadow(0 1px 6px rgba(99, 102, 241, 0.4));
+}
+
 .safc-mini-macro {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
-}
-
-.safc-mini-macro__pct {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: #a5b4fc;
 }
 
 /* Macro page hero + draggable effect chain */
@@ -378,7 +385,16 @@
 .macro-rail-slider--vertical .macro-rail-slider__labels {
   margin-bottom: 0.45rem;
   margin-top: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
   justify-content: center;
+  text-align: center;
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__value {
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .macro-rail-slider--vertical .macro-rail-slider__rail {
@@ -435,7 +451,7 @@
   font-weight: 700;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(118deg, #c4b5fd 0%, #818cf8 35%, #6366f1 60%, #a78bfa 90%);
+  background: linear-gradient(118deg, #d1cfd5 0%, #c3c4ce 35%, #d1d1ea 60%, #a78bfa 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -446,7 +462,7 @@
 
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   .macro-knob__center-pct {
-    color: #c7d2fe;
+    color: #f4f6fc;
     background: none;
     filter: none;
   }
