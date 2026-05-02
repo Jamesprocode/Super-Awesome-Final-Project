@@ -145,16 +145,17 @@ const std::vector<FactoryPreset>& getFactoryPresets()
             {
                 // EQ - dual presence boost (low-mid 1k, high-mid 3k)
                 { "lowMidFreq",  1000.0f, 1000.0f, 1.0f, false },
-                { "lowMidGain",     0.0f,    5.0f, 1.0f, false },
+                { "lowMidGain",     0.0f,    7.0f, 1.0f, false },
                 { "highMidFreq", 3000.0f, 3000.0f, 1.0f, false },
-                { "highMidGain",    0.0f,    7.0f, 1.0f, false },
+                { "highMidGain",    0.0f,    9.0f, 1.0f, false },
                 // Compressor
                 { "threshold",      0.0f,  -24.0f, 1.0f, false },
                 { "ratio",          1.0f,    6.0f, 1.0f, false },
                 // Saturator with output compensation
-                { "preGain",        1.0f,    3.0f, 1.0f, false },
-                { "postGain",       0.33f,   1.0f, 1.0f, true  },
-            }
+                { "preGain",        1.0f,    5.0f, 1.0f, false },
+                { "postGain",       0.2f,    1.0f, 1.0f, true  },
+            },
+            true,
         },
         {
             "Airy Vocal",
@@ -169,7 +170,8 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 // Reverb
                 { "wet",            0.0f,    1.0f, 1.0f, false },
                 { "roomSize",       0.2f,   0.55f, 1.0f, false },
-            }
+            },
+            true,
         },
         {
             "Fuzzy Vocal",
@@ -187,7 +189,8 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "preGain",       1.0f,  5.0f,  1.0f, false },
                 // Chorus
                 { "chormix",       0.0f,  0.33f, 1.0f, true  },
-            }
+            },
+            true,
         },
     };
     return presets;
