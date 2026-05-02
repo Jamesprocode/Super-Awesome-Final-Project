@@ -67,11 +67,50 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  min-height: 100%;
-  padding: 2.1rem 1.25rem 1.95rem;
+  justify-content: flex-start;
+  gap: 0.7rem;
+  height: 100%;
+  padding: 1rem 1.25rem 1rem;
   text-align: center;
+  overflow: hidden;
+}
+
+.macro-page__brand {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  line-height: 1;
+}
+
+.macro-page__brand-line {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: linear-gradient(118deg, #c4b5fd 0%, #818cf8 35%, #6366f1 60%, #a78bfa 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 6px rgba(99, 102, 241, 0.35));
+}
+
+.macro-page__brand-sub {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .macro-page__brand-line {
+    color: #a5b4fc;
+    background: none;
+    filter: none;
+  }
 }
 
 .macro-page__rail-row {
@@ -303,14 +342,85 @@
 
 .macro-knob-hero-percent--macro-page {
   margin: 0;
-  padding: 0.05rem 0 0;
-  font-size: 5rem;
-  line-height: 0.92;
+  padding: 0;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.macro-page__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0 max(2rem, 6vw);
+}
+
+.macro-page__hero-center {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.macro-rail-slider--vertical {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 4.5rem;
+  min-width: 4.5rem;
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__labels {
+  margin-bottom: 0.45rem;
+  margin-top: 0;
+  justify-content: center;
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__rail {
+  position: relative;
+  width: 34px;
+  height: 100%;
+  min-height: 9rem;
+  flex: 1 1 auto;
+  cursor: ns-resize;
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__rail-inner {
+  position: absolute;
+  inset: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 100%;
+  top: 0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__track-bg {
+  background: linear-gradient(0deg, rgba(15, 23, 42, 0.95), rgba(51, 65, 85, 0.9));
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__track-fill {
+  inset: auto 0 0 0;
+  height: 0;
+  background: linear-gradient(0deg, #4338ca 0%, #6366f1 45%, #a5b4fc 100%);
+}
+
+.macro-rail-slider--vertical .macro-rail-slider__thumb {
+  top: auto;
+  left: 50%;
+  transform: translate(-50%, 50%);
 }
 
 .macro-knob.macro-knob--macro-page {
   width: 15rem;
-  padding: 0.42rem;
+  padding: 0.4rem;
 }
 
 .macro-fx-chain {

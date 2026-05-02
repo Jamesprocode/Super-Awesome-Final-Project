@@ -3,7 +3,8 @@ import * as Juce from 'juce-framework-frontend-mirror'
 import './MacroKnob.css'
 
 /**
- * Horizontal drag slider bound to WebSliderRelay (normalised APVTS range).
+ * Drag slider bound to WebSliderRelay (normalised APVTS range).
+ * `orientation` selects horizontal (default) or vertical layout.
  * `formatNormalized` maps 0–1 normalized to a display string.
  */
 export function MacroRailSlider({
@@ -13,12 +14,15 @@ export function MacroRailSlider({
   formatNormalized,
   sensitivity = 0.003,
   resetNormalized = null,
+  orientation = 'horizontal',
   /** Optional: normalized 0–1 after user/JUCE commits */
   onNormalisedChange,
 }) {
+  const isVertical = orientation === 'vertical'
   const drag = useRef({
     active: false,
     lastX: 0,
+    lastY: 0,
     local: 0.5,
     hasJuce: false,
     slider: null,
@@ -66,13 +70,20 @@ export function MacroRailSlider({
     else drag.current.local = norm
     drag.current.active = true
     drag.current.lastX = e.clientX
+    drag.current.lastY = e.clientY
   }
 
   const onPointerMove = (e) => {
     if (!drag.current.active) return
-    const dx = e.clientX - drag.current.lastX
-    drag.current.lastX = e.clientX
-    setNormalised(getValue() + dx * sensitivity)
+    if (isVertical) {
+      const dy = drag.current.lastY - e.clientY
+      drag.current.lastY = e.clientY
+      setNormalised(getValue() + dy * sensitivity)
+    } else {
+      const dx = e.clientX - drag.current.lastX
+      drag.current.lastX = e.clientX
+      setNormalised(getValue() + dx * sensitivity)
+    }
   }
 
   const onPointerUp = (e) => {
@@ -101,8 +112,40 @@ export function MacroRailSlider({
       <div className="macro-rail-slider__labels macro-rail-slider__labels--spacer" aria-hidden />
     ) : null
 
+  const rootCls = `macro-rail-slider ${isVertical ? 'macro-rail-slider--vertical' : ''}`
+
+  if (isVertical) {
+    return (
+      <div className={rootCls} title={formatNormalized(norm)} onDoubleClick={onDoubleClick}>
+        {labelRow}
+        <div
+          className="macro-rail-slider__rail"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          role="presentation"
+        >
+          <div className="macro-rail-slider__rail-inner">
+            <div className="macro-rail-slider__track-bg" aria-hidden />
+            <div
+              className="macro-rail-slider__track-fill"
+              style={{ height: `${norm * 100}%` }}
+              aria-hidden
+            />
+          </div>
+          <div
+            className="macro-rail-slider__thumb"
+            style={{ bottom: `${norm * 100}%` }}
+            aria-hidden
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="macro-rail-slider" title={formatNormalized(norm)} onDoubleClick={onDoubleClick}>
+    <div className={rootCls} title={formatNormalized(norm)} onDoubleClick={onDoubleClick}>
       {labelRow}
       <div
         className="macro-rail-slider__rail"
@@ -122,9 +165,7 @@ export function MacroRailSlider({
         </div>
         <div
           className="macro-rail-slider__thumb"
-          style={{
-            left: `${norm * 100}%`,
-          }}
+          style={{ left: `${norm * 100}%` }}
           aria-hidden
         />
       </div>

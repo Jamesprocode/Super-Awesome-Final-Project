@@ -59,6 +59,8 @@ public:
 
     std::unique_ptr<MacroController> macroController;
 
+    juce::String lastPresetName { "Default" };
+
 private:
     //==============================================================================
     // juce::AudioParameterFloat* roomSizeParam;

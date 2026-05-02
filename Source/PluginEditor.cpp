@@ -143,20 +143,50 @@ const std::vector<FactoryPreset>& getFactoryPresets()
         {
             "Aggressive Vocal",
             {
-                { "threshold",   0.0f, -24.0f, 1.0f },
-                { "ratio",       1.0f,   6.0f, 1.0f },
-                { "preGain",     1.0f,   3.0f, 1.0f },
-                { "highMidGain", 0.0f,   4.0f, 1.0f },
-                { "wet",         0.1f,   0.4f, 1.0f },
+                // EQ - dual presence boost (low-mid 1k, high-mid 3k)
+                { "lowMidFreq",  1000.0f, 1000.0f, 1.0f, false },
+                { "lowMidGain",     0.0f,    5.0f, 1.0f, false },
+                { "highMidFreq", 3000.0f, 3000.0f, 1.0f, false },
+                { "highMidGain",    0.0f,    7.0f, 1.0f, false },
+                // Compressor
+                { "threshold",      0.0f,  -24.0f, 1.0f, false },
+                { "ratio",          1.0f,    6.0f, 1.0f, false },
+                // Saturator with output compensation
+                { "preGain",        1.0f,    3.0f, 1.0f, false },
+                { "postGain",       0.33f,   1.0f, 1.0f, true  },
             }
         },
         {
             "Airy Vocal",
             {
-                { "highGain",    0.0f,  5.0f, 1.0f },
-                { "highMidGain", 0.0f,  2.5f, 1.0f },
-                { "roomSize",    0.2f,  0.55f, 1.0f },
-                { "preGain",     1.0f,  1.6f, 1.0f },
+                // EQ - air shelf at 6k, presence at 3k, low shelf cut at 300
+                { "highFreq",    6000.0f, 6000.0f, 1.0f, false },
+                { "highGain",       0.0f,   10.0f, 1.0f, false },
+                { "highMidFreq", 3000.0f, 3000.0f, 1.0f, false },
+                { "highMidGain",    0.0f,    8.0f, 1.0f, false },
+                { "lowFreq",      300.0f,  300.0f, 1.0f, false },
+                { "lowGain",       -8.0f,    0.0f, 1.0f, true  },
+                // Reverb
+                { "wet",            0.0f,    1.0f, 1.0f, false },
+                { "roomSize",       0.2f,   0.55f, 1.0f, false },
+            }
+        },
+        {
+            "Fuzzy Vocal",
+            {
+                // EQ
+                { "highGain",    -15.0f,  0.0f,  1.0f, true  },
+                { "highMidGain", -15.0f,  0.0f,  1.0f, true  },
+                { "lowMidGain",    0.0f,  6.0f,  1.0f, false },
+                // Reverb
+                { "wet",           0.1f,  0.5f,  1.0f, true  },
+                { "dry",           0.5f,  0.9f,  1.0f, false },
+                { "roomSize",      0.1f,  0.5f,  1.0f, true  },
+                { "damping",       0.1f,  0.5f,  1.0f, false },
+                // Saturator
+                { "preGain",       1.0f,  5.0f,  1.0f, false },
+                // Chorus
+                { "chormix",       0.0f,  0.33f, 1.0f, true  },
             }
         },
     };
@@ -286,6 +316,11 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
         });
 
     o = o.withNativeFunction (
+        juce::Identifier ("safc_getCurrentPresetName"),
+        [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        { ok ({ audioProcessor.lastPresetName }); });
+
+    o = o.withNativeFunction (
         juce::Identifier ("safc_listPresets"),
         [] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
         {
@@ -320,6 +355,7 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
                             param->setValueNotifyingHost (param->getDefaultValue());
 
                     audioProcessor.macroController->setMappings (p.mappings);
+                    audioProcessor.lastPresetName = name;
                     ok ({ true });
                     return;
                 }
@@ -383,13 +419,15 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
 
     webView = std::make_unique<juce::WebBrowserComponent> (buildWebViewOptions());
 
+    setWantsKeyboardFocus (false);
+    setMouseClickGrabsKeyboardFocus (false);
+    content.setWantsKeyboardFocus (false);
+    content.setMouseClickGrabsKeyboardFocus (false);
+    webView->setWantsKeyboardFocus (false);
+    webView->setMouseClickGrabsKeyboardFocus (false);
+
     addAndMakeVisible (content);
     content.addAndMakeVisible (*webView);
-    content.addAndMakeVisible (macroTab);
-    content.addAndMakeVisible (mapTab);
-
-    macroTab.onClick = [this] { showPage (macroPageIndex); };
-    mapTab.onClick = [this] { showPage (mapPageIndex); };
 
     juce::UndoManager* undo = nullptr;
 
@@ -415,7 +453,6 @@ SuperAwesomeVocalChainAudioProcessorEditor::SuperAwesomeVocalChainAudioProcessor
     }
 
     webView->goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
-    showPage (macroPageIndex);
 
     resized();
     startTimer (50);
@@ -437,29 +474,9 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
         inspector->setBounds (area.removeFromRight (inspectorWidth));
 
     content.setBounds (area);
-    auto bounds = content.getLocalBounds();
-
-    const int tabHeight = 50;
-    auto tabs = bounds.removeFromBottom (tabHeight);
-    const auto half = tabs.getWidth() / 2;
-    macroTab.setBounds (tabs.removeFromLeft (half));
-    mapTab.setBounds (tabs);
 
     if (webView != nullptr)
-        webView->setBounds (bounds);
-}
-
-void SuperAwesomeVocalChainAudioProcessorEditor::showPage (int index)
-{
-    macroTab.setToggleState (index == macroPageIndex, juce::dontSendNotification);
-    mapTab.setToggleState (index == mapPageIndex, juce::dontSendNotification);
-
-    if (webView == nullptr)
-        return;
-
-    webView->evaluateJavascript (
-        "(function(){try{var t=window.__SAFC_SET_TAB__;if(typeof t==='function')t(" + juce::String (index)
-        + ");}catch(e){}})();");
+        webView->setBounds (content.getLocalBounds());
 }
 
 void SuperAwesomeVocalChainAudioProcessorEditor::timerCallback()

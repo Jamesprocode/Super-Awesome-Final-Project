@@ -34,13 +34,6 @@ private:
     // All your UI lives inside this component
     juce::Component content;
 
-    juce::TextButton macroTab { "MACRO" };
-    juce::TextButton mapTab { "MAPPING" };
-
-    void showPage (int index);
-    static constexpr int macroPageIndex = 0;
-    static constexpr int mapPageIndex = 1;
-
     // Inspector inspects `content`
     std::unique_ptr<melatonin::Inspector> inspector;
 

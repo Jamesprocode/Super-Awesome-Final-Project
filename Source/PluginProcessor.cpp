@@ -508,6 +508,7 @@ juce::AudioProcessorEditor* SuperAwesomeVocalChainAudioProcessor::createEditor()
 void SuperAwesomeVocalChainAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     juce::ValueTree root ("SAFCState");
+    root.setProperty ("lastPresetName", lastPresetName, nullptr);
     root.appendChild (apvts->copyState(), nullptr);
 
     juce::ValueTree mappingsVT ("MacroMappings");
@@ -520,6 +521,7 @@ void SuperAwesomeVocalChainAudioProcessor::getStateInformation (juce::MemoryBloc
             mvt.setProperty ("minValue",      m.minValue,      nullptr);
             mvt.setProperty ("maxValue",      m.maxValue,      nullptr);
             mvt.setProperty ("curve",         m.curve,         nullptr);
+            mvt.setProperty ("inverted",      m.inverted,      nullptr);
             mappingsVT.appendChild (mvt, nullptr);
         }
     }
@@ -536,6 +538,9 @@ void SuperAwesomeVocalChainAudioProcessor::setStateInformation (const void* data
 
     auto root = juce::ValueTree::fromXml (*xml);
     if (! root.isValid()) return;
+
+    if (root.hasProperty ("lastPresetName"))
+        lastPresetName = root.getProperty ("lastPresetName").toString();
 
     auto apvtsState = root.getChildWithName (apvts->state.getType());
     if (apvtsState.isValid())
@@ -555,6 +560,7 @@ void SuperAwesomeVocalChainAudioProcessor::setStateInformation (const void* data
         m.minValue      = (float) child.getProperty ("minValue");
         m.maxValue      = (float) child.getProperty ("maxValue");
         m.curve         = (float) child.getProperty ("curve");
+        m.inverted      = (bool)  child.getProperty ("inverted");
         mappings.push_back (m);
     }
     macroController->setMappings (std::move (mappings));
@@ -590,7 +596,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.67f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
 
     // Create parameter for compressor effect

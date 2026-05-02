@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import * as Juce from 'juce-framework-frontend-mirror'
-import { BypassToggle } from './BypassToggle.jsx'
 import { FxEffectChain } from './FxEffectChain.jsx'
 import { MacroRailSlider } from './MacroRailSlider.jsx'
 import './MacroKnob.css'
@@ -52,8 +51,6 @@ export function MacroKnob() {
     slider: null,
   })
   const [norm, setNorm] = useState(kReset)
-  const [presets, setPresets] = useState([])
-  const [selectedPreset, setSelectedPreset] = useState('Default')
 
   useEffect(() => {
     const s = Juce.getSliderState?.('macro')
@@ -70,35 +67,6 @@ export function MacroKnob() {
     return () => {
       s.valueChangedEvent.removeListener(listenerId)
     }
-  }, [])
-
-  useEffect(() => {
-    const list = Juce.getNativeFunction?.('safc_listPresets')
-    if (!list) return
-    let cancelled = false
-    list().then((raw) => {
-      if (cancelled) return
-      try {
-        const text = typeof raw === 'string' ? raw : String(raw ?? '')
-        const arr = JSON.parse(text)
-        setPresets(Array.isArray(arr) ? arr : [])
-      } catch {
-        setPresets([])
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const onPickPreset = useCallback(async (e) => {
-    const name = e.target.value
-    setSelectedPreset(name)
-    if (!name) return
-    const load = Juce.getNativeFunction?.('safc_loadPreset')
-    if (!load) return
-    await load(name)
-    window.dispatchEvent(new CustomEvent('safc:preset-loaded', { detail: { name } }))
   }, [])
 
   const getValue = useCallback(() => {
@@ -158,38 +126,23 @@ export function MacroKnob() {
 
   return (
     <div className="macro-page">
-      <header className="macro-page__preset-bar">
-        <label className="macro-page__preset-label" htmlFor={`${id}-preset`}>
-          Preset
-        </label>
-        <select
-          id={`${id}-preset`}
-          className="macro-page__preset-select"
-          value={selectedPreset}
-          onChange={onPickPreset}
-        >
-          {presets.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </header>
-
-      <header className="macro-page__toolbar">
-        <div className="macro-page__toolbar-bypass">
-          <span className="macro-page__bypass-label">Bypass</span>
-          <BypassToggle relayId="allFxBypass" label="Bypass all effects" />
-        </div>
-      </header>
-
       <div className="macro-knob-card">
 
-        <div className="macro-page__macro-top">
+        <h1 className="macro-page__brand">
+          <span className="macro-page__brand-line">Super Awesome</span>
+          <span className="macro-page__brand-sub">Vocal Chain</span>
+        </h1>
 
-          <p className="macro-knob-hero-percent macro-knob-hero-percent--macro-page" aria-hidden>
-            {pctDisplay}%
-          </p>
+        <div className="macro-page__hero">
+          <MacroRailSlider
+            relayId="inputGain"
+            label="Input"
+            formatNormalized={formatGainNormalized}
+            resetNormalized={gainResetNorm}
+            orientation="vertical"
+          />
+
+          <div className="macro-page__hero-center">
 
           <div
             ref={rootRef}
@@ -288,23 +241,24 @@ export function MacroKnob() {
           </g>
         </svg>
           </div>
+
+          <p className="macro-knob-hero-percent macro-knob-hero-percent--macro-page" aria-hidden>
+            {pctDisplay}%
+          </p>
+          </div>
+
+          <MacroRailSlider
+            relayId="outputGain"
+            label="Output"
+            formatNormalized={formatGainNormalized}
+            resetNormalized={gainResetNorm}
+            orientation="vertical"
+          />
         </div>
 
         <FxEffectChain />
 
         <div className="macro-page__rail-row">
-          <MacroRailSlider
-            relayId="inputGain"
-            label="Input gain"
-            formatNormalized={formatGainNormalized}
-            resetNormalized={gainResetNorm}
-          />
-          <MacroRailSlider
-            relayId="outputGain"
-            label="Output gain"
-            formatNormalized={formatGainNormalized}
-            resetNormalized={gainResetNorm}
-          />
           <MacroRailSlider
             relayId="outputDryWet"
             label="Dry / wet output"
