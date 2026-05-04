@@ -6,6 +6,7 @@ import { CollapsibleSection } from './CollapsibleSection.jsx'
 import { MacroRailSlider } from './MacroRailSlider.jsx'
 import { MiniMacroKnob } from './MiniMacroKnob.jsx'
 import { PowerIcon } from './PowerIcon.jsx'
+import { SatTypeSelector } from './SatTypeSelector.jsx'
 import {
   FX_CHAIN_BLOCK_TITLE_BY_EFFECT_INDEX,
   FX_CHAIN_RANK_MAX,
@@ -369,6 +370,11 @@ export function MappingView() {
             defaultOpen={false}
             panelClassName="safc-mapping-block"
           >
+            {block.title === 'Saturator' ? (
+              <div className="safc-mapping-block__topbar">
+                <SatTypeSelector />
+              </div>
+            ) : null}
             {(block.params || []).map((p) => (
               <MappingRow
                 key={p.id}

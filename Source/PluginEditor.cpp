@@ -21,6 +21,7 @@ constexpr const char* kSliderRelayIds[] = {
     "lforate", "lfodepth", "centerdelay", "chorfeedback", "chormix",
     "roomSize", "damping", "width", "wet", "dry",
     "fxChainOrder",
+    "satType",
 };
 
 constexpr const char* kToggleRelayIds[] = {
@@ -124,6 +125,15 @@ float curveExponentFromShapeId (int curveShapeId)
     return 1.0f;
 }
 
+/** Saturator transfer-function indices — must mirror the StringArray order in createParameterLayout. */
+namespace SatType {
+    constexpr int Cubic = 0;
+    constexpr int Soft  = 1;
+    constexpr int Tape  = 2;
+    constexpr int Tube  = 3;
+    constexpr int Hard  = 4;
+}
+
 //==============================================================================
 struct ParamSnapshot
 {
@@ -150,13 +160,14 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "highMidGain", 0.0f,    9.0f, 1.0f, false },
                 { "threshold",   0.0f,  -24.0f, 1.0f, false },
                 { "ratio",       1.0f,    6.0f, 1.0f, false },
-                { "preGain",     1.0f,    5.0f, 1.0f, false },
-                { "postGain",    0.2f,    1.0f, 1.0f, true  },
+                { "preGain",     1.0f,    3.0f, 1.0f, false },
+                { "postGain",    0.5f,    1.0f, 1.0f, true  },
             },
             // Static parameter snapshot
             {
                 { "lowMidFreq",  1000.0f },
                 { "highMidFreq", 3000.0f },
+                { "satType", (float) SatType::Hard },
             },
         },
         {
@@ -165,7 +176,7 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "highGain",    0.0f,  10.0f, 1.0f, false },
                 { "highMidGain", 0.0f,   8.0f, 1.0f, false },
                 { "lowGain",    -8.0f,   0.0f, 1.0f, true  },
-                { "wet",         0.0f,   1.0f, 1.0f, false },
+                { "wet",         0.0f,   1.0f, 0.8f, false },
                 { "roomSize",    0.2f,  0.55f, 1.0f, false },
             },
             {
@@ -184,8 +195,52 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "dry",           0.5f, 0.9f,  1.0f, false },
                 { "roomSize",      0.1f, 0.5f,  1.0f, true  },
                 { "damping",       0.1f, 0.5f,  1.0f, false },
-                { "preGain",       1.0f, 5.0f,  1.0f, false },
+                { "preGain",       1.0f, 3.0f,  1.0f, false },
+                { "postGain",    0.5f,    1.0f, 1.0f, true  },
                 { "chormix",       0.0f, 0.33f, 1.0f, true  },
+            },
+        },
+        {
+            "Warm Vocal",
+            {
+                // EQ
+                { "lowMidGain",  0.0f,    6.0f, 1.0f, false },
+                { "highGain",    0.0f,   -2.0f, 1.0f, false },
+                // Compressor
+                { "threshold",   0.0f,  -12.0f, 1.0f, false },
+                // Saturator — Tube drive with output compensation
+                { "preGain",     1.0f,    3.0f, 1.0f, false },
+                { "postGain",   0.33f,    1.0f, 1.0f, true  },
+                // Reverb
+                { "roomSize",    0.0f,    0.5f, 1.0f, false },
+                { "wet",         0.0f,    0.5f, 1.0f, false },
+            },
+            // Static snapshot
+            {
+                { "lowMidFreq",   500.0f },
+                { "highFreq",    7000.0f },
+                { "ratio",          4.0f },
+                { "attack",       200.0f },
+                { "release",       30.0f },
+                { "satType", (float) SatType::Tube },
+            },
+        },
+        {
+            "Spooky Vocal",
+            {
+                // EQ — high shelf cut (logarithmic, inverse) + low shelf thin (inverse)
+                { "highGain",    -24.0f,  0.0f,  0.5f, true  },
+                { "lowGain",     -12.0f,  0.0f,  1.0f, true  },
+                // Saturator — drive into mild saturation, compensate output
+                { "preGain",       0.5f,  1.8f,  1.0f, false },
+                { "postGain",      0.5f,  1.0f,  1.0f, true  },
+                // Chorus — heavier mix and feedback for the spooky wash
+                { "chorfeedback", -1.0f,  0.6f,  1.0f, false },
+                { "chormix",       0.0f,  0.6f,  1.0f, false },
+                // Reverb
+                { "roomSize",      0.0f,  0.9f,  1.0f, false },
+                { "width",         0.0f,  0.77f, 1.0f, false },
+                { "wet",           0.0f,  0.65f, 0.5f, false },
             },
         },
     };

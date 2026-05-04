@@ -65,6 +65,9 @@ public:
     std::atomic<float> meterInputPeak  { 0.0f };
     std::atomic<float> meterOutputPeak { 0.0f };
 
+    /** Saturator transfer function selector — read in the WaveShaper lambda. 0=Soft, 1=Tube, 2=Tape, 3=Hard, 4=Cubic. */
+    std::atomic<int> currentSatMode { 0 };
+
 private:
     //==============================================================================
     // juce::AudioParameterFloat* roomSizeParam;
@@ -92,7 +95,7 @@ private:
     //Create Saturator
     juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
-        juce::dsp::WaveShaper<float>,
+        juce::dsp::WaveShaper<float, std::function<float (float)>>,
         juce::dsp::Gain<float>
     > saturator;
 

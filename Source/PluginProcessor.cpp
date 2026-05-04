@@ -6,7 +6,8 @@
   ==============================================================================
 */
 
-// #TODO: add reset buttom instead of default; have preset store all parameter value and order of VST; and new design for the input output and dry wet slider
+
+
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
@@ -130,6 +131,7 @@ SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
     // Saturator
     apvts->addParameterListener("preGain", listener.get());
     apvts->addParameterListener("postGain", listener.get());
+    apvts->addParameterListener("satType", listener.get());
 }
 
 SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
@@ -177,6 +179,7 @@ SuperAwesomeVocalChainAudioProcessor::~SuperAwesomeVocalChainAudioProcessor()
         // Saturator
         apvts->removeParameterListener("preGain", listener.get());
         apvts->removeParameterListener("postGain", listener.get());
+        apvts->removeParameterListener("satType", listener.get());
     }
     listener.reset();
     macroController.reset();
@@ -267,9 +270,17 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
     //set waveshaping function
     auto& waveshaper = saturator.get<1>();
 
-    waveshaper.functionToUse = [](float x) noexcept {
-        return std::tanh(x); // hyperbolic tangent soft clipping
-        };
+    waveshaper.functionToUse = [this](float x) noexcept {
+        switch (currentSatMode.load (std::memory_order_relaxed))
+        {
+            case 0:  return juce::jlimit (-1.0f, 1.0f, x - (x * x * x) / 3.0f);   // Cubic — least saturation
+            case 2:  return x / (1.0f + 0.5f * std::abs (x));                     // Tape
+            case 3:  return std::tanh (x + 0.2f * x * x);                         // Tube — asymmetric
+            case 4:  return juce::jlimit (-1.0f, 1.0f, x);                        // Hard — clipping
+            case 1:
+            default: return std::tanh (x);                                        // Soft (default)
+        }
+    };
 
     saturator.prepare(spec);
 
@@ -448,6 +459,8 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     if (satNeedsUpdate.exchange(false)) {
         saturator.get<0>().setGainLinear(*apvts->getRawParameterValue("preGain"));
         saturator.get<2>().setGainLinear(*apvts->getRawParameterValue("postGain"));
+        currentSatMode.store ((int) *apvts->getRawParameterValue("satType"),
+                              std::memory_order_relaxed);
     }
 
     const int chainIndex = static_cast<int> (
@@ -618,7 +631,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.68f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
 
     // Create parameter for compressor effect
@@ -637,6 +650,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     //Create parameters for Saturator
     layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 5.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        "satType", "Saturation Type",
+        juce::StringArray { "Cubic", "Soft", "Tape", "Tube", "Hard" }, 1));
 
     // Macro knob (0..1), drives mapped parameters via MacroController.
     layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
@@ -655,7 +671,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "inputGain", "Input Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "outputGain", "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
+        "outputGain", "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), -1.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("outputDryWet", "Output Dry/Wet", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("allFxBypass", "Bypass All Effects", false));
 

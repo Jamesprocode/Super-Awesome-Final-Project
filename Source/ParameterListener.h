@@ -61,7 +61,7 @@ private:
 
     bool isSatParam(const juce::String& id)
     {
-        return id == "preGain" || id == "postGain";
+        return id == "preGain" || id == "postGain" || id == "satType";
     }
 
     bool isRevParam(const juce::String& id)
