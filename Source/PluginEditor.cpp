@@ -515,8 +515,16 @@ void SuperAwesomeVocalChainAudioProcessorEditor::resized()
 
 void SuperAwesomeVocalChainAudioProcessorEditor::timerCallback()
 {
-    updateVisibility();
-    stopTimer();
+    // Message-thread meter decay: keeps the atomics falling even when the host
+    // stops calling processBlock (transport stopped, audio idle, etc.).
+    // Audio thread still wins via `max(peak, prev * 0.96)` when signal is present.
+    constexpr float kIdleDecay = 0.86f; // applied per 50ms tick → ~12 dB/s
+    audioProcessor.meterInputPeak.store (
+        audioProcessor.meterInputPeak.load (std::memory_order_relaxed) * kIdleDecay,
+        std::memory_order_relaxed);
+    audioProcessor.meterOutputPeak.store (
+        audioProcessor.meterOutputPeak.load (std::memory_order_relaxed) * kIdleDecay,
+        std::memory_order_relaxed);
 }
 
 void SuperAwesomeVocalChainAudioProcessorEditor::updateVisibility() {}

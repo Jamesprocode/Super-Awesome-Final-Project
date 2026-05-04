@@ -378,7 +378,7 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
         for (int ch = 0; ch < nCh; ++ch)
             peak = juce::jmax (peak, buffer.getMagnitude (ch, 0, numSamples));
         const float prev = meterInputPeak.load (std::memory_order_relaxed);
-        meterInputPeak.store (juce::jmax (peak, prev * 0.85f), std::memory_order_relaxed);
+        meterInputPeak.store (juce::jmax (peak, prev * 0.96f), std::memory_order_relaxed);
     }
 
     juce::dsp::AudioBlock<float> block(buffer);
@@ -390,7 +390,7 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
         for (int ch = 0; ch < nCh; ++ch)
             peak = juce::jmax (peak, buffer.getMagnitude (ch, 0, numSamples));
         const float prev = meterOutputPeak.load (std::memory_order_relaxed);
-        meterOutputPeak.store (juce::jmax (peak, prev * 0.85f), std::memory_order_relaxed);
+        meterOutputPeak.store (juce::jmax (peak, prev * 0.96f), std::memory_order_relaxed);
     };
 
     if (bypassAllFx)
@@ -636,7 +636,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
 
     //Create parameters for Saturator
     layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 5.0f, 1.0f));
 
     // Macro knob (0..1), drives mapped parameters via MacroController.
     layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));

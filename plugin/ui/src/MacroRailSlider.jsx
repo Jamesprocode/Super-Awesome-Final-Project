@@ -32,18 +32,10 @@ export function MacroRailSlider({
     let raf = 0
     let cancelled = false
     let inFlight = false
-    /** Linear peak we are currently displaying. */
+    /** Linear peak we are displaying. C++ side handles the decay. */
     let displayed = 0
-    /** Last raw peak received from C++. */
-    let lastSeenFromCpp = -1
-    /** Frames in a row where C++ value hasn't changed — proxy for "transport paused". */
-    let stableFrames = 0
-    let lastTs = performance.now()
-    const tick = (ts) => {
+    const tick = () => {
       if (cancelled) return
-      const dt = Math.max(0, ts - lastTs) / 1000
-      lastTs = ts
-
       if (!inFlight) {
         inFlight = true
         get().then((raw) => {
@@ -52,29 +44,15 @@ export function MacroRailSlider({
           try {
             const obj = JSON.parse(typeof raw === 'string' ? raw : String(raw ?? ''))
             const peak = Number(obj?.[meterChannel]) || 0
-            if (peak === lastSeenFromCpp) {
-              stableFrames += 1
-            } else {
-              stableFrames = 0
-              lastSeenFromCpp = peak
-              displayed = peak
-            }
+            displayed = peak
           } catch {
             /* ignore */
           }
         })
       }
-
-      // Local decay only when C++ side appears frozen (transport paused).
-      if (stableFrames > 3) {
-        displayed = Math.max(0, displayed * Math.exp(-3.5 * dt))
-      }
-
-      // Linear dB → height: -60 dB → 0, 0 dBFS → 1.
       const db = displayed > 1e-5 ? 20 * Math.log10(displayed) : -60
       const clamped = Math.max(-60, Math.min(0, db))
       setMeterNorm((clamped + 60) / 60)
-
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -251,10 +229,7 @@ export function MacroRailSlider({
       {labelRow}
       <div
         className="macro-rail-slider__rail"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onMouseDown={onMouseDown}
         role="presentation"
       >
         <div className="macro-rail-slider__rail-inner">
