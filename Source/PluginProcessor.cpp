@@ -631,7 +631,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.68f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.55f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
 
     // Create parameter for compressor effect
@@ -671,7 +671,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "inputGain", "Input Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "outputGain", "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), -1.5f));
+        "outputGain", "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat> ("outputDryWet", "Output Dry/Wet", 0.0f, 1.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterBool> ("allFxBypass", "Bypass All Effects", false));
 
