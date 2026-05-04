@@ -176,7 +176,7 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "highGain",    0.0f,  10.0f, 1.0f, false },
                 { "highMidGain", 0.0f,   8.0f, 1.0f, false },
                 { "lowGain",    -8.0f,   0.0f, 1.0f, true  },
-                { "wet",         0.0f,   1.0f, 0.8f, false },
+                { "wet",         0.0f,   0.8f, 1.0f, false },
                 { "roomSize",    0.2f,  0.55f, 1.0f, false },
             },
             {
