@@ -174,7 +174,7 @@ const std::vector<FactoryPreset>& getFactoryPresets()
             "Airy Vocal",
             {
                 { "highGain",    0.0f,  10.0f, 1.0f, false },
-                { "highMidGain", 0.0f,   8.0f, 1.0f, false },
+                { "highMidGain", 0.0f,   5.0f, 1.0f, false },
                 { "lowGain",    -8.0f,   0.0f, 1.0f, true  },
                 { "wet",         0.0f,   0.8f, 1.0f, false },
                 { "roomSize",    0.2f,  0.55f, 1.0f, false },
@@ -198,6 +198,9 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "preGain",       1.0f, 3.0f,  1.0f, false },
                 { "postGain",    0.5f,    1.0f, 1.0f, true  },
                 { "chormix",       0.0f, 0.33f, 1.0f, true  },
+            },
+            {
+                { "satType", (float) SatType::Tape },
             },
         },
         {
@@ -232,7 +235,7 @@ const std::vector<FactoryPreset>& getFactoryPresets()
                 { "highGain",    -24.0f,  0.0f,  0.5f, true  },
                 { "lowGain",     -12.0f,  0.0f,  1.0f, true  },
                 // Saturator — drive into mild saturation, compensate output
-                { "preGain",       0.5f,  1.8f,  1.0f, false },
+                { "preGain",       1.0f,  1.8f,  1.0f, false },
                 { "postGain",      0.5f,  1.0f,  1.0f, true  },
                 // Chorus — heavier mix and feedback for the spooky wash
                 { "chorfeedback", -1.0f,  0.6f,  1.0f, false },
