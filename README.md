@@ -42,6 +42,14 @@ run the **`Super Awesome Vocal Chain`** binary in the **`Standalone`** subfolder
 
 ----------------
 
+# Super Awesome ™️ — The Website
+
+The **Super Awesome Vocal Chain** marketing site! 
+
+Visit here: https://super-awesome.vercel.app/
+
+----------------
+
 ## README
 ## 1. Summary
 The production process of writing music in a DAW can be overwhelming and sometimes frustrating when you have so many options and settings that can be tweaked. Some producers have preferred plugin chains that they have assembled from years of experience, but even with that comes the need for slight adjustments depending on the nature of the audio source, which can waste time during a session. Other producers that are less experienced might struggle with figuring out where to start when several plugins with even more parameters to edit are given to them. If there was a way to reduce the headache of needing to dial in the perfect sound without limiting the user, both beginner and experienced music producers would benefit.
