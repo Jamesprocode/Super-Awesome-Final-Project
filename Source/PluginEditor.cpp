@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <SAFCWebAssets.h>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -40,6 +41,30 @@ juce::File getUiPublicFolder()
         .getChildFile ("public");
 }
 
+juce::String getResourcePathFromUrl (const juce::String& url)
+{
+    auto rel = url == "/" || url.isEmpty()
+        ? juce::String { "index.html" }
+        : juce::String { url.fromFirstOccurrenceOf ("/", false, false) };
+
+    rel = rel.upToFirstOccurrenceOf ("?", false, false)
+             .upToFirstOccurrenceOf ("#", false, false)
+             .replaceCharacter ('\\', '/');
+
+    while (rel.startsWith ("/"))
+        rel = rel.substring (1);
+
+    return rel;
+}
+
+bool isSafeResourcePath (const juce::String& rel)
+{
+    return rel.isNotEmpty()
+        && ! rel.contains ("/../")
+        && ! rel.startsWith ("..")
+        && ! juce::File::isAbsolutePath (rel);
+}
+
 juce::String getMimeTypeForExtension (const juce::String& extLowerNoDot)
 {
     if (extLowerNoDot == "htm")   return "text/html";
@@ -58,6 +83,15 @@ juce::String getMimeTypeForExtension (const juce::String& extLowerNoDot)
     return "application/octet-stream";
 }
 
+juce::String getExtensionWithoutDot (const juce::String& filename)
+{
+    auto ext = juce::File { filename }.getFileExtension().toLowerCase();
+    if (ext.isNotEmpty() && ext[0] == '.')
+        ext = ext.fromFirstOccurrenceOf (".", false, false);
+
+    return ext;
+}
+
 std::vector<std::byte> loadFileToByteVector (const juce::File& file)
 {
     juce::MemoryBlock block;
@@ -69,6 +103,33 @@ std::vector<std::byte> loadFileToByteVector (const juce::File& file)
         std::memcpy (v.data(), block.getData(), (size_t) block.getSize());
 
     return v;
+}
+
+std::optional<juce::WebBrowserComponent::Resource> getEmbeddedUiResource (const juce::String& rel)
+{
+    const auto requestedFilename = rel.fromLastOccurrenceOf ("/", false, false);
+
+    for (int i = 0; i < SAFCWebAssets::namedResourceListSize; ++i)
+    {
+        if (requestedFilename != SAFCWebAssets::originalFilenames[i])
+            continue;
+
+        int dataSize = 0;
+        const auto* data = SAFCWebAssets::getNamedResource (SAFCWebAssets::namedResourceList[i], dataSize);
+        if (data == nullptr || dataSize < 0)
+            return std::nullopt;
+
+        std::vector<std::byte> bytes ((size_t) dataSize);
+        if (dataSize > 0)
+            std::memcpy (bytes.data(), data, (size_t) dataSize);
+
+        return juce::WebBrowserComponent::Resource {
+            std::move (bytes),
+            getMimeTypeForExtension (getExtensionWithoutDot (requestedFilename))
+        };
+    }
+
+    return std::nullopt;
 }
 
 void appendMappingBlocks (juce::Array<juce::var>& blocksOut, juce::AudioProcessorValueTreeState& apvts)
@@ -127,11 +188,14 @@ float curveExponentFromShapeId (int curveShapeId)
 
 /** Saturator transfer-function indices — must mirror the StringArray order in createParameterLayout. */
 namespace SatType {
-    constexpr int Cubic = 0;
-    constexpr int Soft  = 1;
-    constexpr int Tape  = 2;
-    constexpr int Tube  = 3;
-    constexpr int Hard  = 4;
+    enum : int
+    {
+        Cubic = 0,
+        Soft  = 1,
+        Tape  = 2,
+        Tube  = 3,
+        Hard  = 4
+    };
 }
 
 //==============================================================================
@@ -248,6 +312,380 @@ const std::vector<FactoryPreset>& getFactoryPresets()
         },
     };
     return presets;
+}
+
+//==============================================================================
+constexpr const char* kUserPresetRootType = "SAFCUserPreset";
+constexpr const char* kParameterValuesType = "ParameterValues";
+constexpr const char* kParameterValueType = "Param";
+constexpr const char* kMacroMappingsType = "MacroMappings";
+constexpr const char* kMacroMappingType = "Mapping";
+constexpr const char* kUserPresetExtension = "safcpreset";
+
+juce::String makePresetId (const juce::String& source, const juce::String& name)
+{
+    return source + ":" + name;
+}
+
+juce::File getUserPresetFolder()
+{
+    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+        .getChildFile ("SuperAwesome")
+        .getChildFile ("Super Awesome Vocal Chain")
+        .getChildFile ("Presets");
+}
+
+juce::String normaliseUserPresetName (juce::String name)
+{
+    name = name.replaceCharacters ("\r\n\t", "   ").trim();
+    while (name.contains ("  "))
+        name = name.replace ("  ", " ");
+
+    return name.substring (0, 80).trim();
+}
+
+juce::File getUserPresetFileForName (const juce::String& name)
+{
+    auto legalName = juce::File::createLegalFileName (name);
+    if (legalName.isEmpty())
+        legalName = "Untitled";
+
+    return getUserPresetFolder().getChildFile (legalName).withFileExtension (kUserPresetExtension);
+}
+
+juce::String getUserPresetNameFromFile (const juce::File& file)
+{
+    auto xml = juce::XmlDocument::parse (file);
+    if (xml != nullptr)
+    {
+        const auto root = juce::ValueTree::fromXml (*xml);
+        if (root.isValid() && root.hasType (kUserPresetRootType))
+        {
+            const auto name = root.getProperty ("name").toString().trim();
+            if (name.isNotEmpty())
+                return name;
+        }
+    }
+
+    return file.getFileNameWithoutExtension();
+}
+
+struct UserPresetInfo
+{
+    juce::String name;
+    juce::File file;
+};
+
+std::vector<UserPresetInfo> getUserPresetInfos()
+{
+    std::vector<UserPresetInfo> infos;
+    const auto folder = getUserPresetFolder();
+    if (! folder.exists())
+        return infos;
+
+    juce::Array<juce::File> files;
+    folder.findChildFiles (
+        files, juce::File::findFiles, false, juce::String ("*.") + kUserPresetExtension);
+
+    for (const auto& file : files)
+    {
+        const auto name = normaliseUserPresetName (getUserPresetNameFromFile (file));
+        if (name.isNotEmpty())
+            infos.push_back ({ name, file });
+    }
+
+    std::sort (
+        infos.begin(), infos.end(),
+        [] (const UserPresetInfo& a, const UserPresetInfo& b)
+        { return a.name.compareIgnoreCase (b.name) < 0; });
+
+    return infos;
+}
+
+juce::File findUserPresetFile (const juce::String& rawName)
+{
+    const auto name = normaliseUserPresetName (rawName);
+    if (name.isEmpty())
+        return {};
+
+    for (const auto& info : getUserPresetInfos())
+        if (info.name == name)
+            return info.file;
+
+    const auto fallback = getUserPresetFileForName (name);
+    return fallback.existsAsFile() ? fallback : juce::File {};
+}
+
+juce::ValueTree createParameterValuesValueTree (juce::AudioProcessorValueTreeState& apvts)
+{
+    juce::StringArray ids;
+    for (auto id : kSliderRelayIds)
+        ids.addIfNotAlreadyThere (id);
+    for (auto id : kToggleRelayIds)
+        ids.addIfNotAlreadyThere (id);
+
+    juce::ValueTree values (kParameterValuesType);
+    for (const auto& id : ids)
+    {
+        if (auto* raw = apvts.getRawParameterValue (id))
+        {
+            juce::ValueTree pv (kParameterValueType);
+            pv.setProperty ("id", id, nullptr);
+            pv.setProperty ("value", (double) raw->load(), nullptr);
+            values.appendChild (pv, nullptr);
+        }
+    }
+
+    return values;
+}
+
+juce::ValueTree createMacroMappingsValueTree (const MacroController* macroController)
+{
+    juce::ValueTree mappingsVT (kMacroMappingsType);
+    if (macroController == nullptr)
+        return mappingsVT;
+
+    for (const auto& m : macroController->getMappings())
+    {
+        juce::ValueTree mvt (kMacroMappingType);
+        mvt.setProperty ("targetParamID", m.targetParamID, nullptr);
+        mvt.setProperty ("minValue",      m.minValue,      nullptr);
+        mvt.setProperty ("maxValue",      m.maxValue,      nullptr);
+        mvt.setProperty ("curve",         m.curve,         nullptr);
+        mvt.setProperty ("inverted",      m.inverted,      nullptr);
+        mappingsVT.appendChild (mvt, nullptr);
+    }
+
+    return mappingsVT;
+}
+
+std::vector<MacroMapping> readMacroMappingsValueTree (const juce::ValueTree& mappingsVT)
+{
+    std::vector<MacroMapping> mappings;
+    if (! mappingsVT.isValid())
+        return mappings;
+
+    for (auto child : mappingsVT)
+    {
+        if (! child.hasType (kMacroMappingType))
+            continue;
+
+        MacroMapping m;
+        m.targetParamID = child.getProperty ("targetParamID").toString();
+        m.minValue      = (float) child.getProperty ("minValue");
+        m.maxValue      = (float) child.getProperty ("maxValue");
+        m.curve         = (float) child.getProperty ("curve");
+        m.inverted      = (bool)  child.getProperty ("inverted");
+
+        if (m.targetParamID.isNotEmpty())
+            mappings.push_back (m);
+    }
+
+    return mappings;
+}
+
+void setParameterPlainValue (
+    juce::AudioProcessorValueTreeState& apvts,
+    const juce::String& paramID,
+    float plainValue)
+{
+    if (auto* ranged = apvts.getParameter (paramID))
+    {
+        const auto& range = ranged->getNormalisableRange();
+        const auto normalised = juce::jlimit (0.0f, 1.0f, range.convertTo0to1 (plainValue));
+        ranged->setValueNotifyingHost (normalised);
+    }
+}
+
+void resetParametersForPreset (SuperAwesomeVocalChainAudioProcessor& processor)
+{
+    if (processor.macroController != nullptr)
+        processor.macroController->setMappings ({});
+
+    for (auto* param : processor.getParameters())
+        param->setValueNotifyingHost (param->getDefaultValue());
+}
+
+bool applyFactoryPreset (
+    SuperAwesomeVocalChainAudioProcessor& processor,
+    const FactoryPreset& preset)
+{
+    if (processor.macroController == nullptr)
+        return false;
+
+    processor.macroController->setMappings ({});
+
+    if (preset.resetParameters)
+        for (auto* param : processor.getParameters())
+            param->setValueNotifyingHost (param->getDefaultValue());
+
+    for (const auto& pv : preset.paramValues)
+        setParameterPlainValue (*processor.apvts, pv.paramID, pv.value);
+
+    processor.macroController->setMappings (preset.mappings);
+    processor.lastPresetName = preset.name;
+    processor.lastPresetSource = "factory";
+    return true;
+}
+
+juce::ValueTree createUserPresetValueTree (
+    SuperAwesomeVocalChainAudioProcessor& processor,
+    const juce::String& name)
+{
+    juce::ValueTree root (kUserPresetRootType);
+    root.setProperty ("formatVersion", 1, nullptr);
+    root.setProperty ("name", name, nullptr);
+    root.appendChild (createParameterValuesValueTree (*processor.apvts), nullptr);
+    root.appendChild (createMacroMappingsValueTree (processor.macroController.get()), nullptr);
+    return root;
+}
+
+bool applyUserPresetValueTree (
+    SuperAwesomeVocalChainAudioProcessor& processor,
+    const juce::ValueTree& root)
+{
+    if (! root.isValid() || ! root.hasType (kUserPresetRootType))
+        return false;
+
+    resetParametersForPreset (processor);
+
+    const auto valuesVT = root.getChildWithName (kParameterValuesType);
+    if (valuesVT.isValid())
+    {
+        for (auto child : valuesVT)
+        {
+            if (! child.hasType (kParameterValueType))
+                continue;
+
+            const auto id = child.getProperty ("id").toString();
+            if (id.isNotEmpty())
+                setParameterPlainValue (*processor.apvts, id, (float) child.getProperty ("value"));
+        }
+    }
+
+    if (processor.macroController != nullptr)
+        processor.macroController->setMappings (
+            readMacroMappingsValueTree (root.getChildWithName (kMacroMappingsType)));
+
+    return true;
+}
+
+juce::String makePresetResponseJson (
+    bool success,
+    const juce::String& message = {},
+    const juce::String& name = {},
+    const juce::String& source = {})
+{
+    auto* obj = new juce::DynamicObject();
+    obj->setProperty ("ok", success);
+    obj->setProperty ("message", message);
+    obj->setProperty ("name", name);
+    obj->setProperty ("source", source);
+    if (source.isNotEmpty() && name.isNotEmpty())
+        obj->setProperty ("id", makePresetId (source, name));
+
+    return juce::JSON::toString (juce::var (obj), false);
+}
+
+bool saveUserPreset (
+    SuperAwesomeVocalChainAudioProcessor& processor,
+    const juce::String& rawName,
+    juce::String& savedNameOut,
+    juce::String& errorOut)
+{
+    const auto name = normaliseUserPresetName (rawName);
+    if (name.isEmpty())
+    {
+        errorOut = "Enter a preset name.";
+        return false;
+    }
+
+    auto folder = getUserPresetFolder();
+    const auto dirResult = folder.createDirectory();
+    if (dirResult.failed())
+    {
+        errorOut = dirResult.getErrorMessage();
+        return false;
+    }
+
+    const auto file = getUserPresetFileForName (name);
+    auto root = createUserPresetValueTree (processor, name);
+    auto xml = root.createXml();
+    if (xml == nullptr || ! file.replaceWithText (xml->toString(), false, false, "\n"))
+    {
+        errorOut = "Could not write preset file.";
+        return false;
+    }
+
+    processor.lastPresetName = name;
+    processor.lastPresetSource = "user";
+    savedNameOut = name;
+    return true;
+}
+
+bool loadUserPreset (
+    SuperAwesomeVocalChainAudioProcessor& processor,
+    const juce::String& rawName,
+    juce::String& loadedNameOut,
+    juce::String& errorOut)
+{
+    const auto file = findUserPresetFile (rawName);
+    if (! file.existsAsFile())
+    {
+        errorOut = "Preset file was not found.";
+        return false;
+    }
+
+    auto xml = juce::XmlDocument::parse (file);
+    if (xml == nullptr)
+    {
+        errorOut = "Preset file could not be read.";
+        return false;
+    }
+
+    const auto root = juce::ValueTree::fromXml (*xml);
+    if (! applyUserPresetValueTree (processor, root))
+    {
+        errorOut = "Preset file is not valid.";
+        return false;
+    }
+
+    const auto storedName = normaliseUserPresetName (root.getProperty ("name").toString());
+    loadedNameOut = storedName.isNotEmpty() ? storedName : normaliseUserPresetName (rawName);
+    processor.lastPresetName = loadedNameOut;
+    processor.lastPresetSource = "user";
+    return true;
+}
+
+bool deleteUserPreset (const juce::String& rawName, juce::String& deletedNameOut, juce::String& errorOut)
+{
+    const auto name = normaliseUserPresetName (rawName);
+    const auto file = findUserPresetFile (name);
+    if (! file.existsAsFile())
+    {
+        errorOut = "Preset file was not found.";
+        return false;
+    }
+
+    if (! file.deleteFile())
+    {
+        errorOut = "Could not delete preset file.";
+        return false;
+    }
+
+    deletedNameOut = name;
+    return true;
+}
+
+juce::String getCurrentPresetJson (const SuperAwesomeVocalChainAudioProcessor& processor)
+{
+    auto* obj = new juce::DynamicObject();
+    obj->setProperty ("name", processor.lastPresetName);
+    obj->setProperty ("source", processor.lastPresetSource);
+    if (processor.lastPresetName.isNotEmpty() && processor.lastPresetSource.isNotEmpty())
+        obj->setProperty ("id", makePresetId (processor.lastPresetSource, processor.lastPresetName));
+
+    return juce::JSON::toString (juce::var (obj), false);
 }
 
 //==============================================================================
@@ -378,6 +816,11 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
         { ok ({ audioProcessor.lastPresetName }); });
 
     o = o.withNativeFunction (
+        juce::Identifier ("safc_getCurrentPresetJson"),
+        [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        { ok ({ getCurrentPresetJson (audioProcessor) }); });
+
+    o = o.withNativeFunction (
         juce::Identifier ("safc_listPresets"),
         [] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion ok)
         {
@@ -385,8 +828,19 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
             for (const auto& p : getFactoryPresets())
             {
                 auto* obj = new juce::DynamicObject();
+                obj->setProperty ("id", makePresetId ("factory", p.name));
                 obj->setProperty ("name", p.name);
+                obj->setProperty ("source", "factory");
                 obj->setProperty ("builtIn", true);
+                arr.add (juce::var (obj));
+            }
+            for (const auto& p : getUserPresetInfos())
+            {
+                auto* obj = new juce::DynamicObject();
+                obj->setProperty ("id", makePresetId ("user", p.name));
+                obj->setProperty ("name", p.name);
+                obj->setProperty ("source", "user");
+                obj->setProperty ("builtIn", false);
                 arr.add (juce::var (obj));
             }
             ok ({ juce::JSON::toString (juce::var (arr), true) });
@@ -403,31 +857,69 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
             }
 
             const auto name = args[0].toString();
-            for (const auto& p : getFactoryPresets())
+            const auto source = args.size() > 1 ? args[1].toString() : juce::String {};
+
+            if (source == "user")
             {
-                if (p.name == name)
+                juce::String loadedName, error;
+                const auto success = loadUserPreset (audioProcessor, name, loadedName, error);
+                ok ({ success });
+                return;
+            }
+
+            if (source != "user")
+            {
+                for (const auto& p : getFactoryPresets())
                 {
-                    // Clear mappings first so subsequent resets/sets don't trigger
-                    // stale-mapping re-application via the macro listener.
-                    audioProcessor.macroController->setMappings ({});
-
-                    if (p.resetParameters)
-                        for (auto* param : audioProcessor.getParameters())
-                            param->setValueNotifyingHost (param->getDefaultValue());
-
-                    for (const auto& pv : p.paramValues)
+                    if (p.name == name)
                     {
-                        if (auto* rap = audioProcessor.apvts->getParameter (pv.paramID))
-                            rap->setValueNotifyingHost (rap->getNormalisableRange().convertTo0to1 (pv.value));
+                        ok ({ applyFactoryPreset (audioProcessor, p) });
+                        return;
                     }
-
-                    audioProcessor.macroController->setMappings (p.mappings);
-                    audioProcessor.lastPresetName = name;
-                    ok ({ true });
-                    return;
                 }
             }
+
+            juce::String loadedName, error;
+            if (loadUserPreset (audioProcessor, name, loadedName, error))
+            {
+                ok ({ true });
+                return;
+            }
+
             ok ({ false });
+        });
+
+    o = o.withNativeFunction (
+        juce::Identifier ("safc_saveUserPreset"),
+        [this] (const juce::Array<juce::var>& args, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        {
+            const auto name = args.isEmpty() ? juce::String {} : args[0].toString();
+            juce::String savedName, error;
+            if (saveUserPreset (audioProcessor, name, savedName, error))
+                ok ({ makePresetResponseJson (true, {}, savedName, "user") });
+            else
+                ok ({ makePresetResponseJson (false, error) });
+        });
+
+    o = o.withNativeFunction (
+        juce::Identifier ("safc_deleteUserPreset"),
+        [this] (const juce::Array<juce::var>& args, juce::WebBrowserComponent::NativeFunctionCompletion ok)
+        {
+            const auto name = args.isEmpty() ? juce::String {} : args[0].toString();
+            juce::String deletedName, error;
+            if (deleteUserPreset (name, deletedName, error))
+            {
+                if (audioProcessor.lastPresetSource == "user" && audioProcessor.lastPresetName == deletedName)
+                {
+                    audioProcessor.lastPresetName = {};
+                    audioProcessor.lastPresetSource = {};
+                }
+                ok ({ makePresetResponseJson (true, {}, deletedName, "user") });
+            }
+            else
+            {
+                ok ({ makePresetResponseJson (false, error) });
+            }
         });
 
     o = o.withNativeFunction (
@@ -452,6 +944,7 @@ juce::WebBrowserComponent::Options SuperAwesomeVocalChainAudioProcessorEditor::b
                 param->setValueNotifyingHost (param->getDefaultValue());
 
             audioProcessor.lastPresetName = {};
+            audioProcessor.lastPresetSource = {};
             ok ({ true });
         });
 
@@ -468,12 +961,13 @@ std::optional<SuperAwesomeVocalChainAudioProcessorEditor::Resource> SuperAwesome
     const juce::String& url)
 {
    #if JUCE_WEB_BROWSER_RESOURCE_PROVIDER_AVAILABLE
-    const juce::String rel = url == "/" || url.isEmpty()
-        ? "index.html"
-        : juce::String { url.fromFirstOccurrenceOf ("/", false, false) };
+    const auto rel = getResourcePathFromUrl (url);
 
-    if (rel.contains ("/../") || rel.startsWith ("..") || juce::File::isAbsolutePath (rel))
+    if (! isSafeResourcePath (rel))
         return std::nullopt;
+
+    if (auto embedded = getEmbeddedUiResource (rel))
+        return embedded;
 
     const auto publicDir = getUiPublicFolder();
     const juce::File file = publicDir.getChildFile (rel);
@@ -481,15 +975,11 @@ std::optional<SuperAwesomeVocalChainAudioProcessorEditor::Resource> SuperAwesome
     if (! file.isAChildOf (publicDir) || ! file.existsAsFile())
         return std::nullopt;
 
-    juce::String ext = file.getFileExtension().toLowerCase();
-    if (ext.isNotEmpty() && ext[0] == '.')
-        ext = ext.fromFirstOccurrenceOf (".", false, false);
-
     auto bytes = loadFileToByteVector (file);
     if (file.getSize() > 0 && bytes.empty())
         return std::nullopt;
 
-    return Resource { std::move (bytes), getMimeTypeForExtension (ext) };
+    return Resource { std::move (bytes), getMimeTypeForExtension (getExtensionWithoutDot (file.getFileName())) };
    #else
     juce::ignoreUnused (url);
     return std::nullopt;

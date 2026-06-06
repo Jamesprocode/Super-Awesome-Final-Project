@@ -107,18 +107,6 @@ export function MacroRailSlider({
 
   const railRef = useRef(null)
 
-  const positionFromEvent = useCallback((e) => {
-    const rail = railRef.current
-    if (!rail) return null
-    const rect = rail.getBoundingClientRect()
-    if (isVertical) {
-      const t = (e.clientY - rect.top) / Math.max(rect.height, 1)
-      return Math.min(1, Math.max(0, 1 - t))
-    }
-    const t = (e.clientX - rect.left) / Math.max(rect.width, 1)
-    return Math.min(1, Math.max(0, t))
-  }, [isVertical])
-
   // Drag handler: window-level mousemove/mouseup, imperative coords via refs.
   // We update React state via setNormalised on every move so the thumb visually tracks.
   const onMouseDown = (e) => {
@@ -150,10 +138,6 @@ export function MacroRailSlider({
     window.addEventListener('mousemove', handleMove)
     window.addEventListener('mouseup', handleUp)
   }
-
-  const onPointerDown = () => {}
-  const onPointerMove = () => {}
-  const onPointerUp = () => {}
 
   const onDoubleClick = (e) => {
     if (resetNormalized == null) return

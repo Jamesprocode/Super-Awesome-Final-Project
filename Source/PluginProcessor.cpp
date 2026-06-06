@@ -58,6 +58,12 @@ void permutationIndexToOrder (int rawIndex, std::array<uint8_t, 5>& out)
     }
 }
 
+float safeFilterFrequency (float rawHz, double sampleRate)
+{
+    const auto maxHz = static_cast<float> (juce::jmax (20.0, sampleRate * 0.45));
+    return juce::jlimit (20.0f, maxHz, rawHz);
+}
+
 } // namespace
 
 //==============================================================================
@@ -66,9 +72,9 @@ SuperAwesomeVocalChainAudioProcessor::SuperAwesomeVocalChainAudioProcessor()
     : AudioProcessor(BusesProperties()
 #if ! JucePlugin_IsMidiEffect
 #if ! JucePlugin_IsSynth
-        .withInput("Input Gain (dB)", juce::AudioChannelSet::stereo(), true)
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
 #endif
-        .withOutput("Output Gain (dB)", juce::AudioChannelSet::stereo(), true)
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
     )
 #endif
@@ -237,15 +243,18 @@ int SuperAwesomeVocalChainAudioProcessor::getCurrentProgram()
 
 void SuperAwesomeVocalChainAudioProcessor::setCurrentProgram (int index)
 {
+    juce::ignoreUnused (index);
 }
 
 const juce::String SuperAwesomeVocalChainAudioProcessor::getProgramName (int index)
 {
+    juce::ignoreUnused (index);
     return {};
 }
 
 void SuperAwesomeVocalChainAudioProcessor::changeProgramName (int index, const juce::String& newName)
 {
+    juce::ignoreUnused (index, newName);
 }
 
 //==============================================================================
@@ -253,8 +262,8 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
 {
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = samplesPerBlock;
-    spec.numChannels = getTotalNumOutputChannels();
+    spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
+    spec.numChannels = static_cast<juce::uint32> (getTotalNumOutputChannels());
 
     lowShelfFilter.prepare(spec);
     lowMidPeakFilter.prepare(spec);
@@ -291,10 +300,15 @@ void SuperAwesomeVocalChainAudioProcessor::prepareToPlay (double sampleRate, int
     //highMidPeakFilter.state = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 2000.0f, 0.707f, 1.0f);
     //highShelfFilter.state = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, 5000.0f, 0.707f, 1.0f);
 
-    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts->getRawParameterValue("lowFreq")->load(), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
-    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("lowMidFreq")->load(), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
-    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("highMidFreq")->load(), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
-    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts->getRawParameterValue("highFreq")->load(), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
+    const auto eqFreq = [this, sampleRate] (const char* paramID)
+    {
+        return safeFilterFrequency (apvts->getRawParameterValue (paramID)->load(), sampleRate);
+    };
+
+    *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, eqFreq("lowFreq"), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
+    *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, eqFreq("lowMidFreq"), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
+    *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, eqFreq("highMidFreq"), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
+    *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, eqFreq("highFreq"), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
     
     reverbParams.roomSize = *apvts->getRawParameterValue("roomSize");
     reverbParams.damping = *apvts->getRawParameterValue("damping");
@@ -356,6 +370,8 @@ bool SuperAwesomeVocalChainAudioProcessor::isBusesLayoutSupported (const BusesLa
 
 void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    juce::ignoreUnused (midiMessages);
+
     if (!isPrepared) {
         return;
     }
@@ -380,6 +396,10 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     const float mixWet =
         juce::jlimit (0.0f, 1.0f, apvts->getRawParameterValue ("outputDryWet")->load());
     const bool bypassAllFx = apvts->getRawParameterValue ("allFxBypass")->load() > (0.5f - 1.0e-6f);
+    const auto isBypassed = [this] (const char* paramID)
+    {
+        return apvts->getRawParameterValue (paramID)->load() > (0.5f - 1.0e-6f);
+    };
 
     buffer.applyGain (juce::Decibels::decibelsToGain (inputDb));
 
@@ -417,10 +437,15 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
     auto sampleRate = getSampleRate();
 
     if (eqNeedsUpdate.exchange(false)) {
-        *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, apvts->getRawParameterValue("lowFreq")->load(), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
-        *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("lowMidFreq")->load(), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
-        *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, apvts->getRawParameterValue("highMidFreq")->load(), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
-        *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, apvts->getRawParameterValue("highFreq")->load(), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
+        const auto eqFreq = [this, sampleRate] (const char* paramID)
+        {
+            return safeFilterFrequency (apvts->getRawParameterValue (paramID)->load(), sampleRate);
+        };
+
+        *lowShelfFilter.state = *Coefficients::makeLowShelf(sampleRate, eqFreq("lowFreq"), apvts->getRawParameterValue("lowQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowGain")->load()));
+        *lowMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, eqFreq("lowMidFreq"), apvts->getRawParameterValue("lowMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("lowMidGain")->load()));
+        *highMidPeakFilter.state = *Coefficients::makePeakFilter(sampleRate, eqFreq("highMidFreq"), apvts->getRawParameterValue("highMidQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highMidGain")->load()));
+        *highShelfFilter.state = *Coefficients::makeHighShelf(sampleRate, eqFreq("highFreq"), apvts->getRawParameterValue("highQ")->load(), juce::Decibels::decibelsToGain(apvts->getRawParameterValue("highGain")->load()));
     }
     
 
@@ -474,7 +499,7 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
         switch (fid)
         {
             case FxEffectId::Eq:
-                if (! *apvts->getRawParameterValue ("eqBypass"))
+                if (! isBypassed ("eqBypass"))
                 {
                     lowShelfFilter.process (context);
                     lowMidPeakFilter.process (context);
@@ -483,19 +508,19 @@ void SuperAwesomeVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>
                 }
                 break;
             case FxEffectId::Comp:
-                if (! *apvts->getRawParameterValue ("compBypass"))
+                if (! isBypassed ("compBypass"))
                     comp.process (context);
                 break;
             case FxEffectId::Saturator:
-                if (! *apvts->getRawParameterValue ("satBypass"))
+                if (! isBypassed ("satBypass"))
                     saturator.process (context);
                 break;
             case FxEffectId::Reverb:
-                if (! *apvts->getRawParameterValue ("reverbBypass"))
+                if (! isBypassed ("reverbBypass"))
                     reverb.process (context);
                 break;
             case FxEffectId::Chorus:
-                if (! *apvts->getRawParameterValue ("chorusBypass"))
+                if (! isBypassed ("chorusBypass"))
                     chorus.process (context);
                 break;
             default:
@@ -544,6 +569,7 @@ void SuperAwesomeVocalChainAudioProcessor::getStateInformation (juce::MemoryBloc
 {
     juce::ValueTree root ("SAFCState");
     root.setProperty ("lastPresetName", lastPresetName, nullptr);
+    root.setProperty ("lastPresetSource", lastPresetSource, nullptr);
     root.appendChild (apvts->copyState(), nullptr);
 
     juce::ValueTree mappingsVT ("MacroMappings");
@@ -577,6 +603,9 @@ void SuperAwesomeVocalChainAudioProcessor::setStateInformation (const void* data
     if (root.hasProperty ("lastPresetName"))
         lastPresetName = root.getProperty ("lastPresetName").toString();
 
+    if (root.hasProperty ("lastPresetSource"))
+        lastPresetSource = root.getProperty ("lastPresetSource").toString();
+
     auto apvtsState = root.getChildWithName (apvts->state.getType());
     if (apvtsState.isValid())
         apvts->replaceState (apvtsState);
@@ -607,73 +636,73 @@ juce::AudioProcessorValueTreeState::ParameterLayout SuperAwesomeVocalChainAudioP
 
     // Create parameters for the EQ effect
     // Low Band (Low Shelf)
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowFreq", "Low Freq", 20.0f, 500.0f, 200.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowGain", "Low Gain", -24.0f, 24.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowQ", "Low Q", 0.1f, 10.0f, 0.707f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lowFreq", 1 }, "Low Freq", 20.0f, 500.0f, 200.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lowGain", 1 }, "Low Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lowQ", 1 }, "Low Q", 0.1f, 10.0f, 0.707f));
 
     // Low-Mid Band (Peak)
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidFreq", "Low-Mid Freq", 200.0f, 2000.0f, 500.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidGain", "Low-Mid Gain", -24.0f, 24.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lowMidQ", "Low-Mid Q", 0.1f, 10.0f, 0.707f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lowMidFreq", 1 }, "Low-Mid Freq", 200.0f, 2000.0f, 500.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lowMidGain", 1 }, "Low-Mid Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lowMidQ", 1 }, "Low-Mid Q", 0.1f, 10.0f, 0.707f));
 
     // High-Mid Band (Peak)
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidFreq", "High-Mid Freq", 2000.0f, 8000.0f, 3000.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidGain", "High-Mid Gain", -24.0f, 24.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highMidQ", "High-Mid Q", 0.1f, 10.0f, 0.707f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "highMidFreq", 1 }, "High-Mid Freq", 2000.0f, 8000.0f, 3000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "highMidGain", 1 }, "High-Mid Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "highMidQ", 1 }, "High-Mid Q", 0.1f, 10.0f, 0.707f));
 
     // High Band (High Shelf)
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highFreq", "High Freq", 5000.0f, 20000.0f, 10000.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highGain", "High Gain", -24.0f, 24.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("highQ", "High Q", 0.1f, 10.0f, 0.707f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "highFreq", 1 }, "High Freq", 5000.0f, 20000.0f, 10000.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "highGain", 1 }, "High Gain", -24.0f, 24.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "highQ", 1 }, "High Q", 0.1f, 10.0f, 0.707f));
 
     // Create parameters for the reverb effect
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("roomSize", "Room Size", 0.0f, 1.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("damping", "Damping", 0.0f, 1.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("width", "Width", 0.0f, 1.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("wet", "Wet Level", 0.0f, 1.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("dry", "Dry Level", 0.0f, 1.0f, 0.55f));
-    layout.add(std::make_unique<juce::AudioParameterBool> ("freeze", "Freeze", false));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "roomSize", 1 }, "Room Size", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "damping", 1 }, "Damping", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "width", 1 }, "Width", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "wet", 1 }, "Wet Level", 0.0f, 1.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "dry", 1 }, "Dry Level", 0.0f, 1.0f, 0.55f));
+    layout.add(std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "freeze", 1 }, "Freeze", false));
 
     // Create parameter for compressor effect
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("threshold", "Threshold", -60.0f, 0.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("ratio", "Ratio", 1.0f, 10.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("attack", "Attack", 2.0f, 200.0f, 2.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("release", "Release", 30.0f, 1000.0f, 30.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "threshold", 1 }, "Threshold", -60.0f, 0.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "ratio", 1 }, "Ratio", 1.0f, 10.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "attack", 1 }, "Attack", 2.0f, 200.0f, 2.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "release", 1 }, "Release", 30.0f, 1000.0f, 30.0f));
 
     //Create parameters for Chorus effect
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("lforate", "Rate",   0.0f, 2.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("lfodepth", "Depth", 0.0f, 1.0f, 0.25f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("centerdelay", "Center Delay", 1.0f, 25.0f, 10.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("chorfeedback", "Feedback", -1.0f, 1.0f, 0.5f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("chormix", "Mix", 0.0f, 1.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "lforate", 1 }, "Rate",   0.0f, 2.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "lfodepth", 1 }, "Depth", 0.0f, 1.0f, 0.25f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "centerdelay", 1 }, "Center Delay", 1.0f, 25.0f, 10.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "chorfeedback", 1 }, "Feedback", -1.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "chormix", 1 }, "Mix", 0.0f, 1.0f, 0.0f));
 
     //Create parameters for Saturator
-    layout.add(std::make_unique<juce::AudioParameterFloat>("preGain", "Pre-Gain", 0.0f, 5.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("postGain", "Post-Gain", 0.0f, 5.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "preGain", 1 }, "Pre-Gain", 0.0f, 5.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "postGain", 1 }, "Post-Gain", 0.0f, 5.0f, 1.0f));
     layout.add(std::make_unique<juce::AudioParameterChoice>(
-        "satType", "Saturation Type",
+        juce::ParameterID { "satType", 1 }, "Saturation Type",
         juce::StringArray { "Cubic", "Soft", "Tape", "Tube", "Hard" }, 1));
 
     // Macro knob (0..1), drives mapped parameters via MacroController.
-    layout.add(std::make_unique<juce::AudioParameterFloat>("macro", "Macro", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID { "macro", 1 }, "Macro", 0.0f, 1.0f, 0.5f));
 
     /** 0 … 119 = ordering of Eq,Comp,Sat,Chorus,Reverb. Default 0 = Eq→Comp→Sat→Chorus→Reverb. */
     layout.add(std::make_unique<juce::AudioParameterInt>(
         juce::ParameterID { "fxChainOrder", 1 }, "FX Chain Order", 0, 119, 0));
 
     // Bypass switches for each module
-    layout.add(std::make_unique<juce::AudioParameterBool>("eqBypass",      "EQ Bypass",      false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("compBypass",    "Comp Bypass",    false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("reverbBypass",  "Reverb Bypass",  false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("chorusBypass",  "Chorus Bypass",  false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("satBypass",     "Sat Bypass",     false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "eqBypass", 1 },      "EQ Bypass",      false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "compBypass", 1 },    "Comp Bypass",    false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "reverbBypass", 1 },  "Reverb Bypass",  false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "chorusBypass", 1 },  "Chorus Bypass",  false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "satBypass", 1 },     "Sat Bypass",     false));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "inputGain", "Input Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
+        juce::ParameterID { "inputGain", 1 }, "Input Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "outputGain", "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat> ("outputDryWet", "Output Dry/Wet", 0.0f, 1.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterBool> ("allFxBypass", "Bypass All Effects", false));
+        juce::ParameterID { "outputGain", 1 }, "Output Gain", juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "outputDryWet", 1 }, "Output Dry/Wet", 0.0f, 1.0f, 1.0f));
+    layout.add(std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "allFxBypass", 1 }, "Bypass All Effects", false));
 
     return layout;
 }

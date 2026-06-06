@@ -59,14 +59,15 @@ public:
 
     std::unique_ptr<MacroController> macroController;
 
-    juce::String lastPresetName { "Default" };
+    juce::String lastPresetName {};
+    juce::String lastPresetSource {};
 
     /** Peak levels (linear 0..1) for input/output VU meters. Read on message thread, written on audio thread. */
     std::atomic<float> meterInputPeak  { 0.0f };
     std::atomic<float> meterOutputPeak { 0.0f };
 
-    /** Saturator transfer function selector — read in the WaveShaper lambda. 0=Soft, 1=Tube, 2=Tape, 3=Hard, 4=Cubic. */
-    std::atomic<int> currentSatMode { 0 };
+    /** Saturator transfer function selector — mirrors the satType choice parameter. */
+    std::atomic<int> currentSatMode { 1 };
 
 private:
     //==============================================================================

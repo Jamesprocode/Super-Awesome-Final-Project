@@ -1,0 +1,4 @@
+504cc2b7acfaaec6fd5b226e1bed095b25f195e9c5a959b85de776f4beb6db34  Install.command
+71e1d4e4ecdff281d3b865f4c1b2cc788dd88057ef1d818ccc90508221326be0  Uninstall.command
+e83c2ca090cf8a11a2a5ce89f63aaec87de7b572acbb3e5f6832eda31903de13  Payload/Super Awesome Vocal Chain.component/Contents/MacOS/Super Awesome Vocal Chain
+461c52acdb0508d88703221065315ff40d270b7f49a13130f523c656f1abb2fb  Payload/Super Awesome Vocal Chain.vst3/Contents/MacOS/Super Awesome Vocal Chain

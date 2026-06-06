@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 
-# Set the minimum supported macOS version to 26.1 for broader compatibility
-# (including Rafael's MacBook lol)
+# Keep the macOS deployment target low enough for distribution.
 if(CMAKE_HOST_APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "26.1" CACHE STRING "Minimum supported macOS version" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum supported macOS version" FORCE)
 endif()
 
 # Change to your project name
@@ -42,6 +41,18 @@ set(SourceFiles
         Source/MacroController.cpp
         Source/MacroController.h
 )
+
+file(GLOB_RECURSE UiPublicFiles CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/plugin/ui/public/*")
+
+if (UiPublicFiles)
+    juce_add_binary_data(SAFCWebAssets
+            NAMESPACE SAFCWebAssets
+            HEADER_NAME SAFCWebAssets.h
+            SOURCES ${UiPublicFiles})
+else()
+    message(FATAL_ERROR "No embedded UI files found in plugin/ui/public. Run `npm run build` in plugin/ui before configuring CMake.")
+endif()
 
 Include (FetchContent)
 FetchContent_Declare (melatonin_inspector
@@ -99,5 +110,6 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
         PRIVATE
+        SAFCWebAssets
         melatonin_inspector
 )
