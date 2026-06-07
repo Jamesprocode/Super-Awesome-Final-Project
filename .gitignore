@@ -2,5 +2,12 @@
 /build/
 /cmake-build-*/
 
+# Local generated release/download packages
+/dist/
+
+# Local website experiment folder. Keep this out of the plugin repo unless it is
+# intentionally converted into normal tracked files or a proper submodule.
+/SuperAwesome/
+
 # macOS
 .DS_Store
